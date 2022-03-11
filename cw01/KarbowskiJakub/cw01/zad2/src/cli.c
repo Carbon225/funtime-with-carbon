@@ -6,11 +6,15 @@
 #include <limits.h>
 #include "zad1.h"
 #include "cmd.h"
+#include "bench.h"
+
+static const char CLI_BENCH_CMD[] = "bench";
 
 static const char CLI_HELP[] =
     "SO Lab1 - Jakub Karbowski\n"
     "\nUsage:\n"
-    "%s [COMMANDS...]\n"
+    "%s bench         - run benchmarks\n"
+    "%s [COMMANDS...] - process given commands\n"
     "\nCommands:\n"
     "create_table SIZE  - create block array with SIZE empty blocks\n"
     "wc_files FILES...  - use wc on FILES and save results to first empty block\n"
@@ -165,8 +169,13 @@ int cli_process_commands(int argc, char **argv)
     }
     else if (argc < 2)
     {
-        fprintf(stderr, CLI_HELP, argv[0], argv[0]);
+        fprintf(stderr, CLI_HELP, argv[0], argv[0], argv[0]);
         return -1;
+    }
+
+    if (!strncmp(argv[1], CLI_BENCH_CMD, sizeof(CLI_BENCH_CMD)))
+    {
+        return benchmarks_run();
     }
 
     int err;
