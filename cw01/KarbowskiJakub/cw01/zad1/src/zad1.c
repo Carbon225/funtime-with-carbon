@@ -2,8 +2,12 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
+#include <unistd.h>
 
 #define STR_BUF_SIZE (1024)
+
+static const char TMP_FILE_TEMPLATE[] = "/tmp/jkzad2.XXXXXX";
 
 /**
  * Escape string with single quotes.
@@ -64,63 +68,62 @@ static int quote_string(char *out, size_t n, const char *in)
 /**
  * Load file contents to a new block.
  *
- * @param path File path.
+ * @param fd File descriptor.
  * @return Pointer to created block or NULL if error.
  */
-static block_t* create_block_from_file(const char *path)
+static block_t* create_block_from_file(int fd)
 {
-    if (!path) return NULL;
-
-    int err;
     block_t *block = NULL;
 
-    FILE *file = fopen(path, "r");
-    if (!file) goto error;
+    do
+    {
+        if (fd < 0) break;
 
-    // get file size by seeking to EOF and back
-    err = fseek(file, 0, SEEK_END);
-    if (err) goto error;
-    fpos_t size;
-    err = fgetpos(file, &size);
-    if (err) goto error;
-    err = fseek(file, 0, SEEK_SET);
-    if (err) goto error;
+        // get file size by seeking to EOF and back
+        off_t size = lseek(fd, 0, SEEK_END);
+        if (size < 0) break;
+        off_t off = lseek(fd, 0, SEEK_SET);
+        if (off) break;
 
-    block = malloc(sizeof(*block));
-    if (!block) goto error;
+        block = malloc(sizeof(*block));
+        if (!block) break;
 
-    block->size = size;
-    block->data = malloc(size);
-    if (!block->data) goto error;
+        block->size = size;
+        block->data = malloc(size);
+        if (!block->data) break;
 
-    size_t written = fread(block->data, 1, size, file);
-    if (written != size) goto error;
+        size_t written = read(fd, block->data, size);
+        if (written != size) break;
 
-    fclose(file);
-    return block;
+        return block;
+    } while (0);
 
-    error:
+    // cleanup
     if (block)
     {
         free(block->data);
         free(block);
     }
-    if (file) fclose(file);
     return NULL;
 }
 
 barr_t* barr_alloc(size_t size)
 {
-    barr_t *barr = malloc(sizeof(*barr));
-    if (!barr) goto error;
+    barr_t *barr = NULL;
 
-    barr->size = size;
-    barr->blocks = calloc(size, sizeof(*barr->blocks));
-    if (!barr->blocks) goto error;
+    do
+    {
+        barr = malloc(sizeof(*barr));
+        if (!barr) break;
 
-    return barr;
+        barr->size = size;
+        barr->blocks = calloc(size, sizeof(*barr->blocks));
+        if (!barr->blocks) break;
 
-    error:
+        return barr;
+    } while (0);
+
+    // cleanup
     if (barr)
     {
         free(barr->blocks);
@@ -149,30 +152,51 @@ void barr_free(barr_t *barr)
     free(barr);
 }
 
-int generate_stats_file(const char *in_file, const char *out_file)
+int generate_stats_file(const char *in_filename)
 {
-    if (!in_file || !out_file) return -1;
-
     int err;
     char cmd[STR_BUF_SIZE];
-    char in_file_quoted[STR_BUF_SIZE];
-    char out_file_quoted[STR_BUF_SIZE];
+    char in_filename_quoted[STR_BUF_SIZE];
+    char out_filename[sizeof(TMP_FILE_TEMPLATE)];
+    int out_file_fd = -1;
 
-    err = quote_string(in_file_quoted, sizeof(in_file_quoted), in_file);
-    if (err) return -1;
+    do
+    {
+        if (!in_filename) break;
 
-    err = quote_string(out_file_quoted, sizeof(out_file_quoted), out_file);
-    if (err) return -1;
+        memcpy(out_filename, TMP_FILE_TEMPLATE, sizeof(TMP_FILE_TEMPLATE));
+        out_file_fd = mkstemp(out_filename);
+        if (out_file_fd < 0) break;
 
-    int n = snprintf(cmd, sizeof(cmd), "wc %s > %s", in_file_quoted, out_file_quoted);
-    if (n >= sizeof(cmd)) return -1;
+        err = quote_string(
+            in_filename_quoted,
+            sizeof(in_filename_quoted),
+            in_filename
+        );
+        if (err) break;
 
-    return system(cmd);
+        int n = snprintf(
+            cmd,
+            sizeof(cmd),
+            "wc %s > %s",
+            in_filename_quoted,
+            out_filename
+        );
+        if (n >= sizeof(cmd)) break;
+
+        err = system(cmd);
+        if (err) break;
+        return out_file_fd;
+    } while (0);
+
+    // cleanup
+    if (out_file_fd >= 0) close(out_file_fd);
+    return -1;
 }
 
-int barr_block_load(barr_t *barr, const char *in_file)
+int barr_block_load(barr_t *barr, int in_file_fd)
 {
-    if (!barr || !barr->blocks || !in_file) return -1;
+    if (!barr || !barr->blocks || in_file_fd < 0) return -1;
 
     // find first free block
     int index = -1;
@@ -188,7 +212,7 @@ int barr_block_load(barr_t *barr, const char *in_file)
     // no free blocks
     if (index < 0) return -1;
 
-    barr->blocks[index] = create_block_from_file(in_file);
+    barr->blocks[index] = create_block_from_file(in_file_fd);
     if (!barr->blocks[index]) return -1;
 
     return index;

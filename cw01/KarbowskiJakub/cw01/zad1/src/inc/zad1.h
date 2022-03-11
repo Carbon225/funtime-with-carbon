@@ -35,10 +35,10 @@ void barr_free(barr_t *barr);
  * Load file contents into a free block.
  *
  * @param barr Pointer to block array.
- * @param in_file File path.
+ * @param in_file_fd Input file descriptor.
  * @return Index of new block or negative error.
  */
-int barr_block_load(barr_t *barr, const char *in_file);
+int barr_block_load(barr_t *barr, int in_file_fd);
 
 /**
  * Delete block at index.
@@ -50,12 +50,13 @@ int barr_block_load(barr_t *barr, const char *in_file);
 int barr_block_delete(barr_t *barr, int b_index);
 
 /**
- * Calls wc 'in_file' > 'out_file'.
+ * Calls wc on in_file and writes results
+ * to new temporary file.
+ * User MUST close created file.
  *
- * @param in_file Input file path.
- * @param out_file Output file path.
- * @return 0 if success, else error.
+ * @param in_filename Input file path.
+ * @return Created file descriptor or negative error.
  */
-int generate_stats_file(const char *in_file, const char *out_file);
+int generate_stats_file(const char *in_filename);
 
 #endif

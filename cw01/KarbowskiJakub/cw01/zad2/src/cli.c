@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
+#include <unistd.h>
 #include "zad1.h"
 #include "cmd.h"
 #include "bench.h"
@@ -86,12 +87,11 @@ static int process_current_command(cli_state_t *cli)
             // parse all filenames
             for (; cli->current_arg < cli->argc && cmd_parse(cli->argv[cli->current_arg]) == CMD_INVALID; cli->current_arg++)
             {
-                int err;
                 const char *in_file = cli->argv[cli->current_arg];
-                const char *out_file = "tmp.txt";
 
-                err = generate_stats_file(in_file, out_file);
-                if (err)
+                // opens tmp file
+                int out_file_fd = generate_stats_file(in_file);
+                if (out_file_fd < 0)
                 {
                     fprintf(stderr, "Could not wc %s\n", in_file);
                     return -1;
@@ -99,7 +99,9 @@ static int process_current_command(cli_state_t *cli)
 
                 fprintf(stderr, "Processed %s\n", in_file);
 
-                int index = barr_block_load(cli->barr, out_file);
+                int index = barr_block_load(cli->barr, out_file_fd);
+                // closes tmp file
+                close(out_file_fd);
                 if (index < 0)
                 {
                     fprintf(stderr, "Could not load results into block array\n");
