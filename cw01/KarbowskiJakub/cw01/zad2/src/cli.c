@@ -176,7 +176,7 @@ int cli_process_commands(int argc, char **argv)
 
     if (!strncmp(argv[1], CLI_BENCH_CMD, sizeof(CLI_BENCH_CMD)))
     {
-        return benchmarks_run();
+        return benchmarks_run(argc - 2, argv + 2);
     }
 
     int err;

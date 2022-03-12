@@ -31,7 +31,11 @@ help:
 
 .PHONY: test
 test: zad2
-	./RUN create_table 2 wc_files Makefile RUN remove_block 0 wc_files src/main.c
+	$(OUT_DIR)/zad2 create_table 2 wc_files Makefile RUN remove_block 0 wc_files src/main.c
+
+.PHONY: bench
+bench: zad2
+	$(OUT_DIR)/zad2 bench $(shell find $(SRC_DIR) -type f)
 
 .PHONY: zad2
 zad2:
