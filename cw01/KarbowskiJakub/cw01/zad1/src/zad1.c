@@ -186,11 +186,20 @@ int generate_stats_file(const char *in_filename)
 
         err = system(cmd);
         if (err) break;
+
+        // file will be automatically
+        // removed when closed
+        unlink(out_filename);
+
         return out_file_fd;
     } while (0);
 
     // cleanup
-    if (out_file_fd >= 0) close(out_file_fd);
+    if (out_file_fd >= 0)
+    {
+        close(out_file_fd);
+        unlink(out_filename);
+    }
     return -1;
 }
 
