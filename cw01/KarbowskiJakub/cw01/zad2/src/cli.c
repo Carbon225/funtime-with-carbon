@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <limits.h>
 #include <unistd.h>
 #include "zad1.h"
 #include "cmd.h"
@@ -99,10 +98,11 @@ static int process_current_command(cli_state_t *cli)
 
                 fprintf(stderr, "Processed %s\n", in_file);
 
-                int index = barr_block_load(cli->barr, out_file_fd);
+                size_t index;
+                int err = barr_block_load(cli->barr, out_file_fd, &index);
                 // closes tmp file
                 close(out_file_fd);
-                if (index < 0)
+                if (err)
                 {
                     fprintf(stderr, "Could not load results into block array\n");
                     return -1;
@@ -110,7 +110,7 @@ static int process_current_command(cli_state_t *cli)
 
                 size_t size = cli->barr->blocks[index]->size;
 
-                fprintf(stderr, "Loaded results (%luB) into block %d\n", size, index);
+                fprintf(stderr, "Loaded results (%luB) into block %lu\n", size, index);
             }
 
             break;
@@ -134,22 +134,21 @@ static int process_current_command(cli_state_t *cli)
             }
 
             char *endptr;
-            long index_l = strtol(cli->argv[cli->current_arg], &endptr, 10);
-            if (!*cli->argv[cli->current_arg] || *endptr || index_l < 0 || index_l > INT_MAX)
+            long index = strtol(cli->argv[cli->current_arg], &endptr, 10);
+            if (!*cli->argv[cli->current_arg] || *endptr || index < 0)
             {
                 fprintf(stderr, "Invalid index: %s\n", cli->argv[cli->current_arg]);
                 return -1;
             }
-            int index = (int) index_l;
 
             int err = barr_block_delete(cli->barr, index);
             if (err)
             {
-                fprintf(stderr, "Error deleting block %d\n", index);
+                fprintf(stderr, "Error deleting block %ld\n", index);
                 return -1;
             }
 
-            fprintf(stderr, "Removed block %d\n", index);
+            fprintf(stderr, "Removed block %ld\n", index);
             cli->current_arg++;
             break;
         }

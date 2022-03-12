@@ -36,9 +36,10 @@ void barr_free(barr_t *barr);
  *
  * @param barr Pointer to block array.
  * @param in_file_fd Input file descriptor.
- * @return Index of new block or negative error.
+ * @param new_index [Output] Index of created block.
+ * @return 0 or negative error.
  */
-int barr_block_load(barr_t *barr, int in_file_fd);
+int barr_block_load(barr_t *barr, int in_file_fd, size_t *new_index);
 
 /**
  * Delete block at index.
@@ -47,7 +48,7 @@ int barr_block_load(barr_t *barr, int in_file_fd);
  * @param b_index Block index.
  * @return 0 if successful, else error.
  */
-int barr_block_delete(barr_t *barr, int b_index);
+int barr_block_delete(barr_t *barr, size_t b_index);
 
 /**
  * Calls wc on in_file and writes results

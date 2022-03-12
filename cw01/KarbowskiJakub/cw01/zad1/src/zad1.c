@@ -24,7 +24,7 @@ static int quote_string(char *out, size_t n, const char *in)
 
     // count characters to escape
     size_t out_size = 3; // start with "''\0" (3 chars)
-    for (int i = 0; in[i]; ++i)
+    for (size_t i = 0; in[i]; ++i)
     {
         switch (in[i])
         {
@@ -45,7 +45,7 @@ static int quote_string(char *out, size_t n, const char *in)
     // write quoted string
     size_t written = 0;
     out[written++] = '\'';
-    for (int i = 0; in[i]; ++i)
+    for (size_t i = 0; in[i]; ++i)
     {
         switch (in[i])
         {
@@ -138,7 +138,7 @@ void barr_free(barr_t *barr)
 
     if (barr->blocks)
     {
-        for (int i = 0; i < barr->size; ++i)
+        for (size_t i = 0; i < barr->size; ++i)
         {
             if (barr->blocks[i])
             {
@@ -194,31 +194,35 @@ int generate_stats_file(const char *in_filename)
     return -1;
 }
 
-int barr_block_load(barr_t *barr, int in_file_fd)
+int barr_block_load(barr_t *barr, int in_file_fd, size_t *new_index)
 {
-    if (!barr || !barr->blocks || in_file_fd < 0) return -1;
+    if (!barr || !barr->blocks || in_file_fd < 0 || !new_index) return -1;
 
     // find first free block
-    int index = -1;
-    for (int i = 0; i < barr->size; ++i)
+    size_t index;
+    int found = 0;
+    for (size_t i = 0; i < barr->size; ++i)
     {
         if (!barr->blocks[i])
         {
+            found = 1;
             index = i;
             break;
         }
     }
 
     // no free blocks
-    if (index < 0) return -1;
+    if (!found) return -1;
 
     barr->blocks[index] = create_block_from_file(in_file_fd);
     if (!barr->blocks[index]) return -1;
 
-    return index;
+    *new_index = index;
+
+    return 0;
 }
 
-int barr_block_delete(barr_t *barr, int b_index)
+int barr_block_delete(barr_t *barr, size_t b_index)
 {
     if (!barr ||
         !barr->blocks ||
