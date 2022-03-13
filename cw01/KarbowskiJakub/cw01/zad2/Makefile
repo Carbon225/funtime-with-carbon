@@ -35,7 +35,7 @@ test: zad2
 
 .PHONY: bench
 bench: zad2
-	$(OUT_DIR)/zad2 bench $(shell find $(SRC_DIR) -type f)
+	$(OUT_DIR)/zad2 bench $(shell find .. -type f)
 
 .PHONY: zad2
 zad2:
