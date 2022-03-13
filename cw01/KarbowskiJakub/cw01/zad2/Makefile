@@ -15,8 +15,11 @@ SRCS := $(shell find $(SRC_DIR) -type f -and -name "*.c" -print)
 HDRS := $(shell find $(INC_DIRS) -type f -and -name "*.h" -print)
 OBJS := $(SRCS:%.c=$(OBJ_DIR)/%.o)
 
-CFLAGS += $(INC_DIRS:%=-I%) -Wall -Werror
-LDFLAGS += -L$(ZAD1_LIB_DIR) -lzad1
+LIBS := zad1 c
+
+OLEVEL ?= 0
+CFLAGS += -Wp,$(INC_DIRS:%=-I%) -Wall -Werror -O$(OLEVEL)
+LDFLAGS += -Wl,-L$(ZAD1_LIB_DIR)
 
 
 .PHONY: all
@@ -57,5 +60,5 @@ $(OBJ_DIR)/%.o: %.c $(HDRS)
 
 $(OUT_DIR)/zad2: $(OBJS) $(ZAD1_LIB_DIR)/libzad1.a
 	@mkdir -p $(dir $@)
-	$(CC) $(LDFLAGS) -o $@ $(filter %.o,$^)
+	$(CC) $(LDFLAGS) -o $@ $(filter %.o,$^) $(LIBS:%=-l%)
 
