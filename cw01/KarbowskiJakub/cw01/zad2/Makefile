@@ -42,34 +42,33 @@ bench: results3a.txt results3b.txt
 
 
 .PHONY: zad2
-zad2:
-	$(MAKE) deps_static
-	$(MAKE) $(OUT_DIR)/$@
+zad2: zad2_static_O$(OLEVEL)
+	cp $(OUT_DIR)/$< $(OUT_DIR)/$@
 
 
 .PHONY: zad2_static_O%
 zad2_static_O%:
-	$(MAKE) deps_static
+	$(MAKE) deps_static_$(shell echo $@ | cut -d_ -f3)
 	$(MAKE) $(OUT_DIR)/$@
 
 .PHONY: zad2_shared_O%
 zad2_shared_O%:
-	$(MAKE) deps_shared
+	$(MAKE) deps_shared_$(shell echo $@ | cut -d_ -f3)
 	$(MAKE) $(OUT_DIR)/$@
 
 .PHONY: zad2_dll_O%
 zad2_dll_O%:
-	$(MAKE) deps_shared
+	$(MAKE) deps_shared_$(shell echo $@ | cut -d_ -f3)
 	$(MAKE) $(OUT_DIR)/$@
 
 
-.PHONY: deps_static
-deps_static:
-	cd $(ZAD1_DIR) && $(MAKE) static
+.PHONY: deps_static_O%
+deps_static_O%:
+	cd $(ZAD1_DIR) && $(MAKE) static_$(shell echo $@ | cut -d_ -f3)
 
-.PHONY: deps_shared
-deps_shared:
-	cd $(ZAD1_DIR) && $(MAKE) shared
+.PHONY: deps_shared_O%
+deps_shared_O%:
+	cd $(ZAD1_DIR) && $(MAKE) shared_$(shell echo $@ | cut -d_ -f3)
 
 
 .PHONY: clean
@@ -191,88 +190,85 @@ $(OBJ_DIR)/%.Os.o: %.c $(HDRS)
 
 $(OBJ_DIR)/%.O0.dll.o: %.c $(HDRS)
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -Wp,-DZAD1_LIB_DLL=1,-DZAD1_LIB_PATH="\"${PWD}/$(ZAD1_SHARED_LIB_DIR)/libzad1.so\"" -O0 -c -o $@ $<
+	$(CC) $(CFLAGS) -Wp,-DZAD1_LIB_DLL=1,-DZAD1_LIB_PATH="\"${PWD}/$(ZAD1_SHARED_LIB_DIR)/libzad1O0.so\"",-DZAD1_LIB_FILE="\"libzad1O0.so\"" -O0 -c -o $@ $<
 
 $(OBJ_DIR)/%.O1.dll.o: %.c $(HDRS)
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -Wp,-DZAD1_LIB_DLL=1,-DZAD1_LIB_PATH="\"${PWD}/$(ZAD1_SHARED_LIB_DIR)/libzad1.so\"" -O1 -c -o $@ $<
+	$(CC) $(CFLAGS) -Wp,-DZAD1_LIB_DLL=1,-DZAD1_LIB_PATH="\"${PWD}/$(ZAD1_SHARED_LIB_DIR)/libzad1O1.so\"",-DZAD1_LIB_FILE="\"libzad1O1.so\"" -O1 -c -o $@ $<
 
 $(OBJ_DIR)/%.O2.dll.o: %.c $(HDRS)
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -Wp,-DZAD1_LIB_DLL=1,-DZAD1_LIB_PATH="\"${PWD}/$(ZAD1_SHARED_LIB_DIR)/libzad1.so\"" -O2 -c -o $@ $<
+	$(CC) $(CFLAGS) -Wp,-DZAD1_LIB_DLL=1,-DZAD1_LIB_PATH="\"${PWD}/$(ZAD1_SHARED_LIB_DIR)/libzad1O2.so\"",-DZAD1_LIB_FILE="\"libzad1O2.so\"" -O2 -c -o $@ $<
 
 $(OBJ_DIR)/%.O3.dll.o: %.c $(HDRS)
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -Wp,-DZAD1_LIB_DLL=1,-DZAD1_LIB_PATH="\"${PWD}/$(ZAD1_SHARED_LIB_DIR)/libzad1.so\"" -O3 -c -o $@ $<
+	$(CC) $(CFLAGS) -Wp,-DZAD1_LIB_DLL=1,-DZAD1_LIB_PATH="\"${PWD}/$(ZAD1_SHARED_LIB_DIR)/libzad1O3.so\"",-DZAD1_LIB_FILE="\"libzad1O3.so\"" -O3 -c -o $@ $<
 
 $(OBJ_DIR)/%.Os.dll.o: %.c $(HDRS)
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -Wp,-DZAD1_LIB_DLL=1,-DZAD1_LIB_PATH="\"${PWD}/$(ZAD1_SHARED_LIB_DIR)/libzad1.so\"" -Os -c -o $@ $<
+	$(CC) $(CFLAGS) -Wp,-DZAD1_LIB_DLL=1,-DZAD1_LIB_PATH="\"${PWD}/$(ZAD1_SHARED_LIB_DIR)/libzad1Os.so\"",-DZAD1_LIB_FILE="\"libzad1Os.so\"" -Os -c -o $@ $<
 
 
-$(OUT_DIR)/zad2_static_O0: $(OBJS:.o=.O0.o) $(ZAD1_STATIC_LIB_DIR)/libzad1.a
+$(OUT_DIR)/zad2_static_O0: $(OBJS:.o=.O0.o) $(ZAD1_STATIC_LIB_DIR)/libzad1O0.a
 	@mkdir -p $(dir $@)
-	$(CC) $(LDFLAGS) -Wl,-L$(ZAD1_STATIC_LIB_DIR) -o $@ $(filter %.o,$^) -Wl,-lzad1,-lc
+	$(CC) $(LDFLAGS) -Wl,-L$(ZAD1_STATIC_LIB_DIR) -o $@ $(filter %.o,$^) -Wl,-lzad1O0,-lc
 
-$(OUT_DIR)/zad2_static_O1: $(OBJS:.o=.O1.o) $(ZAD1_STATIC_LIB_DIR)/libzad1.a
+$(OUT_DIR)/zad2_static_O1: $(OBJS:.o=.O1.o) $(ZAD1_STATIC_LIB_DIR)/libzad1O1.a
 	@mkdir -p $(dir $@)
-	$(CC) $(LDFLAGS) -Wl,-L$(ZAD1_STATIC_LIB_DIR) -o $@ $(filter %.o,$^) -Wl,-lzad1,-lc
+	$(CC) $(LDFLAGS) -Wl,-L$(ZAD1_STATIC_LIB_DIR) -o $@ $(filter %.o,$^) -Wl,-lzad1O1,-lc
 
-$(OUT_DIR)/zad2_static_O2: $(OBJS:.o=.O2.o) $(ZAD1_STATIC_LIB_DIR)/libzad1.a
+$(OUT_DIR)/zad2_static_O2: $(OBJS:.o=.O2.o) $(ZAD1_STATIC_LIB_DIR)/libzad1O2.a
 	@mkdir -p $(dir $@)
-	$(CC) $(LDFLAGS) -Wl,-L$(ZAD1_STATIC_LIB_DIR) -o $@ $(filter %.o,$^) -Wl,-lzad1,-lc
+	$(CC) $(LDFLAGS) -Wl,-L$(ZAD1_STATIC_LIB_DIR) -o $@ $(filter %.o,$^) -Wl,-lzad1O2,-lc
 
-$(OUT_DIR)/zad2_static_O3: $(OBJS:.o=.O3.o) $(ZAD1_STATIC_LIB_DIR)/libzad1.a
+$(OUT_DIR)/zad2_static_O3: $(OBJS:.o=.O3.o) $(ZAD1_STATIC_LIB_DIR)/libzad1O3.a
 	@mkdir -p $(dir $@)
-	$(CC) $(LDFLAGS) -Wl,-L$(ZAD1_STATIC_LIB_DIR) -o $@ $(filter %.o,$^) -Wl,-lzad1,-lc
+	$(CC) $(LDFLAGS) -Wl,-L$(ZAD1_STATIC_LIB_DIR) -o $@ $(filter %.o,$^) -Wl,-lzad1O3,-lc
 
-$(OUT_DIR)/zad2_static_Os: $(OBJS:.o=.Os.o) $(ZAD1_STATIC_LIB_DIR)/libzad1.a
+$(OUT_DIR)/zad2_static_Os: $(OBJS:.o=.Os.o) $(ZAD1_STATIC_LIB_DIR)/libzad1Os.a
 	@mkdir -p $(dir $@)
-	$(CC) $(LDFLAGS) -Wl,-L$(ZAD1_STATIC_LIB_DIR) -o $@ $(filter %.o,$^) -Wl,-lzad1,-lc
+	$(CC) $(LDFLAGS) -Wl,-L$(ZAD1_STATIC_LIB_DIR) -o $@ $(filter %.o,$^) -Wl,-lzad1Os,-lc
 
 
 
-$(OUT_DIR)/zad2_shared_O0: $(OBJS:.o=.O0.o) $(ZAD1_SHARED_LIB_DIR)/libzad1.so
+$(OUT_DIR)/zad2_shared_O0: $(OBJS:.o=.O0.o) $(ZAD1_SHARED_LIB_DIR)/libzad1O0.so
 	@mkdir -p $(dir $@)
-	$(CC) $(LDFLAGS) -Wl,-L$(ZAD1_SHARED_LIB_DIR) -o $@ $(filter %.o,$^) -Wl,-lzad1,-lc
+	$(CC) $(LDFLAGS) -Wl,-L$(ZAD1_SHARED_LIB_DIR) -o $@ $(filter %.o,$^) -Wl,-lzad1O0,-lc
 
-$(OUT_DIR)/zad2_shared_O1: $(OBJS:.o=.O1.o) $(ZAD1_SHARED_LIB_DIR)/libzad1.so
+$(OUT_DIR)/zad2_shared_O1: $(OBJS:.o=.O1.o) $(ZAD1_SHARED_LIB_DIR)/libzad1O1.so
 	@mkdir -p $(dir $@)
-	$(CC) $(LDFLAGS) -Wl,-L$(ZAD1_SHARED_LIB_DIR) -o $@ $(filter %.o,$^) -Wl,-lzad1,-lc
+	$(CC) $(LDFLAGS) -Wl,-L$(ZAD1_SHARED_LIB_DIR) -o $@ $(filter %.o,$^) -Wl,-lzad1O1,-lc
 
-$(OUT_DIR)/zad2_shared_O2: $(OBJS:.o=.O2.o) $(ZAD1_SHARED_LIB_DIR)/libzad1.so
+$(OUT_DIR)/zad2_shared_O2: $(OBJS:.o=.O2.o) $(ZAD1_SHARED_LIB_DIR)/libzad1O2.so
 	@mkdir -p $(dir $@)
-	$(CC) $(LDFLAGS) -Wl,-L$(ZAD1_SHARED_LIB_DIR) -o $@ $(filter %.o,$^) -Wl,-lzad1,-lc
+	$(CC) $(LDFLAGS) -Wl,-L$(ZAD1_SHARED_LIB_DIR) -o $@ $(filter %.o,$^) -Wl,-lzad1O2,-lc
 
-$(OUT_DIR)/zad2_shared_O3: $(OBJS:.o=.O3.o) $(ZAD1_SHARED_LIB_DIR)/libzad1.so
+$(OUT_DIR)/zad2_shared_O3: $(OBJS:.o=.O3.o) $(ZAD1_SHARED_LIB_DIR)/libzad1O3.so
 	@mkdir -p $(dir $@)
-	$(CC) $(LDFLAGS) -Wl,-L$(ZAD1_SHARED_LIB_DIR) -o $@ $(filter %.o,$^) -Wl,-lzad1,-lc
+	$(CC) $(LDFLAGS) -Wl,-L$(ZAD1_SHARED_LIB_DIR) -o $@ $(filter %.o,$^) -Wl,-lzad1O3,-lc
 
-$(OUT_DIR)/zad2_shared_Os: $(OBJS:.o=.Os.o) $(ZAD1_SHARED_LIB_DIR)/libzad1.so
+$(OUT_DIR)/zad2_shared_Os: $(OBJS:.o=.Os.o) $(ZAD1_SHARED_LIB_DIR)/libzad1Os.so
 	@mkdir -p $(dir $@)
-	$(CC) $(LDFLAGS) -Wl,-L$(ZAD1_SHARED_LIB_DIR) -o $@ $(filter %.o,$^) -Wl,-lzad1,-lc
+	$(CC) $(LDFLAGS) -Wl,-L$(ZAD1_SHARED_LIB_DIR) -o $@ $(filter %.o,$^) -Wl,-lzad1Os,-lc
 
 
-$(OUT_DIR)/zad2_dll_O0: $(OBJS:.o=.O0.dll.o) $(ZAD1_SHARED_LIB_DIR)/libzad1.so
-	@mkdir -p $(dir $@)
-	$(CC) $(LDFLAGS) -o $@ $(filter %.o,$^) -Wl,-lc
-
-$(OUT_DIR)/zad2_dll_O1: $(OBJS:.o=.O1.dll.o) $(ZAD1_SHARED_LIB_DIR)/libzad1.so
+$(OUT_DIR)/zad2_dll_O0: $(OBJS:.o=.O0.dll.o) $(ZAD1_SHARED_LIB_DIR)/libzad1O0.so
 	@mkdir -p $(dir $@)
 	$(CC) $(LDFLAGS) -o $@ $(filter %.o,$^) -Wl,-lc
 
-$(OUT_DIR)/zad2_dll_O2: $(OBJS:.o=.O2.dll.o) $(ZAD1_SHARED_LIB_DIR)/libzad1.so
+$(OUT_DIR)/zad2_dll_O1: $(OBJS:.o=.O1.dll.o) $(ZAD1_SHARED_LIB_DIR)/libzad1O1.so
 	@mkdir -p $(dir $@)
 	$(CC) $(LDFLAGS) -o $@ $(filter %.o,$^) -Wl,-lc
 
-$(OUT_DIR)/zad2_dll_O3: $(OBJS:.o=.O3.dll.o) $(ZAD1_SHARED_LIB_DIR)/libzad1.so
+$(OUT_DIR)/zad2_dll_O2: $(OBJS:.o=.O2.dll.o) $(ZAD1_SHARED_LIB_DIR)/libzad1O2.so
 	@mkdir -p $(dir $@)
 	$(CC) $(LDFLAGS) -o $@ $(filter %.o,$^) -Wl,-lc
 
-$(OUT_DIR)/zad2_dll_Os: $(OBJS:.o=.Os.dll.o) $(ZAD1_SHARED_LIB_DIR)/libzad1.so
+$(OUT_DIR)/zad2_dll_O3: $(OBJS:.o=.O3.dll.o) $(ZAD1_SHARED_LIB_DIR)/libzad1O3.so
 	@mkdir -p $(dir $@)
 	$(CC) $(LDFLAGS) -o $@ $(filter %.o,$^) -Wl,-lc
 
+$(OUT_DIR)/zad2_dll_Os: $(OBJS:.o=.Os.dll.o) $(ZAD1_SHARED_LIB_DIR)/libzad1Os.so
+	@mkdir -p $(dir $@)
+	$(CC) $(LDFLAGS) -o $@ $(filter %.o,$^) -Wl,-lc
 
-$(OUT_DIR)/zad2: zad2_static_O$(OLEVEL)
-	cp $(OUT_DIR)/$< $@

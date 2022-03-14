@@ -24,7 +24,7 @@ int zad1_lib_load()
 {
     if (ZAD1_LIB_INIT) return 0;
 
-    void *handle = dlopen("libzad1.so", RTLD_LAZY);
+    void *handle = dlopen(ZAD1_LIB_FILE, RTLD_LAZY);
     if (!handle)
     {
         handle = dlopen(ZAD1_LIB_PATH, RTLD_LAZY);
