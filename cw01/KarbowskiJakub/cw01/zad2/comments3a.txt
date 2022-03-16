@@ -1,0 +1,13 @@
+Biblioteki współdzielone/dynamiczne są mierzalnie
+wolniejsze niż statycznie linkowane.
+
+Operacja free() jest bardzo szybka.
+
+Dla testów:
+- WC FILES
+- LOAD DELETE
+większość czasu spędzona jest w trybie jądra.
+Dla:
+- LOAD BLOCKS
+- DELETE BLOCKS
+znaczna większość to tryb użytkownika.

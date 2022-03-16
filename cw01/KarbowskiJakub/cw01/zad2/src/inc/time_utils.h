@@ -15,8 +15,19 @@ typedef struct bench_t
     double stime;
 } bench_t;
 
+/**
+ * Start time measurement.
+ *
+ * @param bench Timekeeping structure.
+ */
 void bench_start(bench_t *bench);
 
+/**
+ * Stop time measurement
+ * and save durations.
+ *
+ * @param bench Timekeeping structure.
+ */
 void bench_stop(bench_t *bench);
 
 void bench_print(const bench_t *bench);

@@ -1,7 +1,11 @@
+# USER CONFIG
 BUILD_DIR ?= build
 OUT_DIR ?= $(BUILD_DIR)/out
-
-BENCH_DIR := $(OUT_DIR)/bench
+BENCH_DIR ?= $(OUT_DIR)/bench
+OLEVEL ?= 2
+CFLAGS += -Wall -Werror
+LDFLAGS +=
+# -----------
 
 OBJ_DIR := $(BUILD_DIR)/obj
 
@@ -18,9 +22,7 @@ SRCS := $(shell find $(SRC_DIR) -type f -and -name "*.c" -print)
 HDRS := $(shell find $(INC_DIRS) -type f -and -name "*.h" -print)
 OBJS := $(SRCS:%.c=$(OBJ_DIR)/%.o)
 
-OLEVEL ?= 2
-CFLAGS += -Wp,$(INC_DIRS:%=-I%) -Wall -Werror
-LDFLAGS +=
+CFLAGS += -Wp,$(INC_DIRS:%=-I%)
 
 
 .PHONY: all

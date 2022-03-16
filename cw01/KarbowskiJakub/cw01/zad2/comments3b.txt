@@ -1,0 +1,7 @@
+Dla bibliotek statycznych widać przyśpieszenie
+wynikające z użycia opcji -O.
+Dla pozostałych bibliotek róznice są w granicach błędu pomiaru.
+Widać, że opcja -Os na pewno nie przyśpiesza kodu.
+Według mnie, na podstawie tych testów
+nie jesteśmy w stanie miarodajnie ocenić
+skuteczności opcji -O.

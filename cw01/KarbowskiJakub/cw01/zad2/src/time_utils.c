@@ -4,6 +4,9 @@
 #include <sys/resource.h>
 #include <time.h>
 
+
+// time difference functions
+
 static double ts_sub(const struct timespec *t1, const struct timespec *t2)
 {
     return (double) (t1->tv_sec - t2->tv_sec) + (double) (t1->tv_nsec - t2->tv_nsec) / 1000000000.0;
@@ -13,6 +16,7 @@ static double tv_sub(const struct timeval *t1, const struct timeval *t2)
 {
     return (double) (t1->tv_sec - t2->tv_sec) + (double) (t1->tv_usec - t2->tv_usec) / 1000000.0;
 }
+
 
 void bench_start(bench_t *bench)
 {

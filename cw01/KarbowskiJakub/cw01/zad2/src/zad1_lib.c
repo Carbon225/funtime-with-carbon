@@ -24,9 +24,11 @@ int zad1_lib_load()
 {
     if (ZAD1_LIB_INIT) return 0;
 
+    // try loading by name
     void *handle = dlopen(ZAD1_LIB_FILE, RTLD_LAZY);
     if (!handle)
     {
+        // else try loading by hardcoded absolute path
         handle = dlopen(ZAD1_LIB_PATH, RTLD_LAZY);
         if (!handle) return -1;
     }

@@ -13,13 +13,22 @@
 
 int benchmarks_run(int num_files, char **in_files)
 {
+    /*
+     * This function does a lot of error checking
+     * in addition to the benchmarks.
+     * It obviously has an impact on runtimes,
+     * but it is the only way to keep the code safe.
+     */
+
     if (num_files > MAX_FILE_COUNT || !in_files) return -1;
 
     int err = 0;
     bench_t bench;
     barr_t *barr;
+    // buffer for created file descriptors
     int created_fds[MAX_FILE_COUNT];
     int created_files = 0;
+    // buffer for created block ids
     size_t created_block_idx[MAX_BLOCKS];
     int created_blocks = 0;
 
@@ -40,6 +49,7 @@ int benchmarks_run(int num_files, char **in_files)
                 err = -1;
                 break;
             }
+            // keep track of MAX_FILE_COUNT files
             if (created_files < MAX_FILE_COUNT)
             {
                 created_fds[created_files] = fd;
@@ -47,6 +57,7 @@ int benchmarks_run(int num_files, char **in_files)
             }
             else
             {
+                // if buffer full, discard file
                 close(fd);
             }
         }
@@ -65,6 +76,7 @@ int benchmarks_run(int num_files, char **in_files)
             size_t b_index;
             err = barr_block_load(barr, created_fds[count % created_files], &b_index);
             if (err) break;
+            // keep track of MAX_BLOCKS blocks
             if (created_blocks < MAX_BLOCKS)
             {
                 created_block_idx[created_blocks] = b_index;
@@ -72,6 +84,8 @@ int benchmarks_run(int num_files, char **in_files)
             }
             else
             {
+                // if buffer full, delete block
+                // (would mem leak otherwise)
                 err = barr_block_delete(barr, b_index);
                 if (err) break;
             }
@@ -86,6 +100,7 @@ int benchmarks_run(int num_files, char **in_files)
 
         bench_start(&bench);
 
+        // delete all blocks in buffer
         for (int i = 0; i < created_blocks; ++i)
         {
             err = barr_block_delete(barr, created_block_idx[i]);
@@ -104,6 +119,7 @@ int benchmarks_run(int num_files, char **in_files)
 
         for (int count = 0; count < BENCH4_COUNT; ++count)
         {
+            // create & remove in batches
             for (int i = 0; i < created_files; ++i)
             {
                 size_t index;
@@ -135,6 +151,8 @@ int benchmarks_run(int num_files, char **in_files)
         printf("[BENCH] LOAD DELETE:\n");
         bench_print(&bench);
     } while (0);
+
+    // cleanup
 
     for (int i = 0; i < created_files; ++i)
     {

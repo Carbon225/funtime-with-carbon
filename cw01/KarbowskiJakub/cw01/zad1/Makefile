@@ -1,5 +1,8 @@
+# USER CONFIG
 BUILD_DIR ?= build
 OUT_DIR ?= $(BUILD_DIR)/out
+CFLAGS += -Wall -Werror
+# -----------
 
 OBJ_DIR := $(BUILD_DIR)/obj
 STATIC_DIR := $(OUT_DIR)/static
@@ -12,18 +15,22 @@ SRCS := $(shell find $(SRC_DIR) -type f -and -name "*.c" -print)
 HDRS := $(shell find $(INC_DIR) -type f -and -name "*.h" -print)
 OBJS := $(SRCS:%.c=$(OBJ_DIR)/%.o)
 
-CFLAGS += -I$(INC_DIR) -Wall -Werror
+CFLAGS += -I$(INC_DIR)
 
 
 .PHONY: all
 all: static shared
 
+# default O level for static
 .PHONY: static
 static: static_O2
 
+# default O level for shared
 .PHONY: shared
 shared: shared_O2
 
+
+# all possible O levels for static
 
 .PHONY: static_O0
 static_O0: $(STATIC_DIR)/libzad1O0.a
@@ -40,6 +47,8 @@ static_O3: $(STATIC_DIR)/libzad1O3.a
 .PHONY: static_Os
 static_Os: $(STATIC_DIR)/libzad1Os.a
 
+
+# all possible O levels for shared
 
 .PHONY: shared_O0
 shared_O0: $(SHARED_DIR)/libzad1O0.so
@@ -62,6 +71,8 @@ clean:
 	rm -rf $(BUILD_DIR) $(OUT_DIR)
 
 
+# all possible O levels for objs
+
 $(OBJ_DIR)/%.O0.o: %.c $(HDRS)
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c -fPIC -O0 -o $@ $<
@@ -83,6 +94,8 @@ $(OBJ_DIR)/%.Os.o: %.c $(HDRS)
 	$(CC) $(CFLAGS) -c -fPIC -Os -o $@ $<
 
 
+# actual static libs
+
 $(STATIC_DIR)/libzad1O0.a: $(OBJS:.o=.O0.o)
 	@mkdir -p $(dir $@)
 	ar rsc $@ $^
@@ -103,6 +116,8 @@ $(STATIC_DIR)/libzad1Os.a: $(OBJS:.o=.Os.o)
 	@mkdir -p $(dir $@)
 	ar rsc $@ $^
 
+
+# actual shared libs
 
 $(SHARED_DIR)/libzad1O0.so: $(OBJS:.o=.O0.o)
 	@mkdir -p $(dir $@)
