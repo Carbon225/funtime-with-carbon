@@ -21,6 +21,14 @@ CFLAGS += -I$(INC_DIR)
 .PHONY: all
 all: static shared
 
+.PHONY: help
+help:
+	@echo 'make all       - compile everything'
+	@echo 'make static    - compile static lib'
+	@echo 'make shared    - compile shared lib'
+	@echo 'make static_Ox - compile static lib with -Ox flag'
+	@echo 'make shared_Ox - compile shared lib with -Ox flag'
+
 # default O level for static
 .PHONY: static
 static: static_O2
