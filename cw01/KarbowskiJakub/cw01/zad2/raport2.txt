@@ -1,0 +1,8 @@
+[BENCH] WC FILES:
+real 1.320434 user 0.371776 system 0.969732 [s]
+[BENCH] LOAD BLOCKS:
+real 0.250846 user 0.234396 system 0.015869 [s]
+[BENCH] DELETE BLOCKS:
+real 0.000482 user 0.000361 system 0.000120 [s]
+[BENCH] LOAD DELETE:
+real 0.480864 user 0.163420 system 0.316243 [s]

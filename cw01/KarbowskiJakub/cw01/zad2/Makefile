@@ -41,7 +41,7 @@ test: zad2
 	$(OUT_DIR)/zad2 create_table 2 wc_files Makefile RUN remove_block 0 wc_files src/main.c
 
 .PHONY: bench
-bench: results3a.txt results3b.txt
+bench: raport2.txt results3a.txt results3b.txt
 
 
 .PHONY: zad2
@@ -78,6 +78,9 @@ deps_shared_O%:
 clean:
 	rm -rf $(BUILD_DIR) $(OUT_DIR)
 
+
+raport2.txt: $(BENCH_DIR)/static_O$(OLEVEL).txt
+	cat $^ > $@
 
 results3a.txt: $(BENCH_DIR)/static_O$(OLEVEL).txt $(BENCH_DIR)/shared_O$(OLEVEL).txt $(BENCH_DIR)/dll_O$(OLEVEL).txt
 	echo 'OLEVEL=$(OLEVEL)' > $@
