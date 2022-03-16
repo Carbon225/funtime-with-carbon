@@ -12,5 +12,5 @@ clean:
 	rm -f $(TARS)
 
 $(NAME)-cw%.tar.gz: cw% $(ALL_FILES)
-	cd $< && tar czf ../$@ $(NAME)
+	cd $< && tar czf ../$@ --exclude='build' $(NAME)
 
