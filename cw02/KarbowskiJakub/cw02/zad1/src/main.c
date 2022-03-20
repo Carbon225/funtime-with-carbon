@@ -3,7 +3,7 @@
 #include "libcopy.h"
 
 static const char HELP[] =
-        "SO Lab 2 - Jakub Karbowski\n\n"
+        "SO Lab2 Zad1 - Jakub Karbowski\n"
         "Usage:\n"
         "%s              - interactive mode\n"
         "%s INPUT OUTPUT - copy contents of INPUT to OUTPUT "

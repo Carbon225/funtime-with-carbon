@@ -8,11 +8,13 @@
 
 int copy_file(const char *in_path, const char *out_path)
 {
+    if (!in_path || !out_path) return -1;
+
     int err = 0;
     fpos_t buf_size = 256;
-    char *buf = 0;
-    FILE *fin = 0;
-    FILE *fout = 0;
+    char *buf = NULL;
+    FILE *fin = NULL;
+    FILE *fout = NULL;
 
     do
     {
@@ -39,12 +41,15 @@ int copy_file(const char *in_path, const char *out_path)
 
         while (!feof(fin))
         {
+            // remember start of line
             fpos_t line_start;
             err = fgetpos(fin, &line_start);
             if (err) break;
 
+            // should this line be discarded
             int ignore = 1;
 
+            // find end of line
             for (;;)
             {
                 int c = fgetc(fin);
@@ -55,23 +60,29 @@ int copy_file(const char *in_path, const char *out_path)
                     break;
                 }
 
+                // found char in line
                 if (!isspace(c)) ignore = 0;
 
+                // end of line
                 if (c == '\n') break;
             }
             if (err) break;
 
+            // discard line
             if (ignore) continue;
 
+            // remember end of line
             fpos_t line_end;
             err = fgetpos(fin, &line_end);
             if (err) break;
 
             fpos_t line_size = line_end - line_start;
 
+            // go to beginning
             err = fsetpos(fin, &line_start);
             if (err) break;
 
+            // realloc buf if needed
             if (line_size > buf_size)
             {
                 buf_size = line_size;
@@ -83,6 +94,7 @@ int copy_file(const char *in_path, const char *out_path)
                 }
             }
 
+            // read entire line
             size_t n = fread(buf, 1, line_size, fin);
             if (n != line_size)
             {
@@ -90,6 +102,7 @@ int copy_file(const char *in_path, const char *out_path)
                 break;
             }
 
+            // write line to output
             n = fwrite(buf, 1, line_size, fout);
             if (n != line_size)
             {

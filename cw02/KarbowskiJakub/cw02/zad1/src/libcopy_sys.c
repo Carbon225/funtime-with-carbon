@@ -12,8 +12,8 @@ int copy_file(const char *in_path, const char *out_path)
     int err = 0;
     off_t buf_size = 256;
     char *buf = NULL;
-    int fin = 0;
-    int fout = 0;
+    int fin = -1;
+    int fout = -1;
 
     do
     {
@@ -41,6 +41,7 @@ int copy_file(const char *in_path, const char *out_path)
         int eof = 0;
         while (!eof)
         {
+            // remember line start
             off_t line_start = lseek(fin, 0, SEEK_CUR);
             if (line_start < 0)
             {
@@ -48,8 +49,10 @@ int copy_file(const char *in_path, const char *out_path)
                 break;
             }
 
+            // should line be discarded
             int ignore = 1;
 
+            // find end of line
             for (;;)
             {
                 char c;
@@ -71,8 +74,10 @@ int copy_file(const char *in_path, const char *out_path)
             }
             if (err) break;
 
+            // skip this line
             if (ignore) continue;
 
+            // found line end
             off_t line_end = lseek(fin, 0, SEEK_CUR);
             if (line_end < 0)
             {
@@ -82,6 +87,7 @@ int copy_file(const char *in_path, const char *out_path)
 
             off_t line_size = line_end - line_start;
 
+            // go to start
             off_t p = lseek(fin, line_start, SEEK_SET);
             if (p < 0)
             {
@@ -89,6 +95,7 @@ int copy_file(const char *in_path, const char *out_path)
                 break;
             }
 
+            // realloc buffer if needed
             if (line_size > buf_size)
             {
                 buf_size = line_size;
@@ -100,6 +107,7 @@ int copy_file(const char *in_path, const char *out_path)
                 }
             }
 
+            // read line
             ssize_t n = read(fin, buf, line_size);
             if (n != line_size)
             {
@@ -107,6 +115,7 @@ int copy_file(const char *in_path, const char *out_path)
                 break;
             }
 
+            // write line
             n = write(fout, buf, line_size);
             if (n != line_size)
             {
@@ -116,8 +125,8 @@ int copy_file(const char *in_path, const char *out_path)
         }
     } while (0);
 
-    close(fin);
-    close(fout);
+    if (fin >= 0) close(fin);
+    if (fin >= 0) close(fout);
     free(buf);
 
     return err;
