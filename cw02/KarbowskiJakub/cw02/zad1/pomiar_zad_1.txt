@@ -1,0 +1,14 @@
+SYS:
+real 16.80
+user 3.62
+sys 12.97
+LIB:
+real 5.16
+user 3.20
+sys 1.77
+
+Implementacja z libc jest o wiele
+wydajniejsza niż ręczna za pomocą
+bibliotek systemowych.
+Należy zauważyć, że praktycznie
+cały dodatkowy czas to czas systemowy.

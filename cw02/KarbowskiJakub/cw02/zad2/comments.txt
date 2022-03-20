@@ -1,0 +1,5 @@
+Implementacja z libc jest o wiele
+wydajniejsza niż ręczna za pomocą
+bibliotek systemowych.
+Należy zauważyć, że praktycznie
+cały dodatkowy czas to czas systemowy.

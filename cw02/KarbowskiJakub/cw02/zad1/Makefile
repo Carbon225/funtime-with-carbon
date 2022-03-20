@@ -44,12 +44,15 @@ clean:
 	rm -rf $(BUILD_DIR) $(OUT_DIR)
 
 
-pomiar_zad_1.txt: $(OUT_DIR)/zad1_sys $(OUT_DIR)/zad1_lib $(BENCH_DIR)/input
+pomiar_zad_1.txt: $(OUT_DIR)/zad1_sys $(OUT_DIR)/zad1_lib $(BENCH_DIR)/input comments.txt
 	@echo 'SYS:' > $@
 	(time -p $(OUT_DIR)/zad1_sys $(BENCH_DIR)/input $(BENCH_DIR)/output) 2>> $@
 
 	@echo 'LIB:' >> $@
 	(time -p $(OUT_DIR)/zad1_lib $(BENCH_DIR)/input $(BENCH_DIR)/output) 2>> $@
+
+	@echo '' >> $@
+	@cat comments.txt >> $@
 
 
 $(BENCH_DIR)/input: $(shell find $(SRC_DIR) -type f) Makefile
