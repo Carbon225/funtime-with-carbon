@@ -46,17 +46,17 @@ clean:
 
 pomiar_zad_2.txt: $(OUT_DIR)/zad2_sys $(OUT_DIR)/zad2_lib $(BENCH_DIR)/input
 	@echo 'SYS:' > $@
-	(time -p $(OUT_DIR)/zad2_sys $(BENCH_DIR)/input $(BENCH_DIR)/output) 2>> $@
+	(time -p $(OUT_DIR)/zad2_sys a $(BENCH_DIR)/input) 2>> $@
 
 	@echo 'LIB:' >> $@
-	(time -p $(OUT_DIR)/zad2_lib $(BENCH_DIR)/input $(BENCH_DIR)/output) 2>> $@
+	(time -p $(OUT_DIR)/zad2_lib a $(BENCH_DIR)/input) 2>> $@
 
 
 $(BENCH_DIR)/input: $(shell find $(SRC_DIR) -type f) Makefile
 	@mkdir -p $(dir $@)
 	@rm -f $@
 	@echo 'Generating input file'
-	@for i in {1..5000}; do cat $^ >> $@; done
+	@for i in {1..10000}; do cat $^ >> $@; done
 
 
 $(OBJ_DIR)/%.lib.o: %.c $(HDRS)
