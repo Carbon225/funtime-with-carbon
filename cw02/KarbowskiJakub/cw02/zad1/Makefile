@@ -23,6 +23,12 @@ CFLAGS += -Wp,$(INC_DIRS:%=-I%) -O$(OLEVEL) -std=c99
 .PHONY: all
 all: $(OUT_DIR)/zad1
 
+.PHONY: lib
+lib: $(OUT_DIR)/zad1_lib
+
+.PHONY: sys
+sys: $(OUT_DIR)/zad1_sys
+
 .PHONY: help
 help:
 	@echo './RUN [ARGS]     - run program'
