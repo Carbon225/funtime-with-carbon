@@ -1,5 +1,7 @@
 #include "libcopy.h"
 
+#ifdef IMPL_LIB
+
 #include <stdio.h>
 #include <ctype.h>
 #include <stdlib.h>
@@ -103,3 +105,5 @@ int copy_file(const char *in_path, const char *out_path)
 
     return err;
 }
+
+#endif // IMPL_LIB
