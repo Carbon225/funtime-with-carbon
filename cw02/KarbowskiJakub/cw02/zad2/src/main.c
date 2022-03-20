@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include "libcount.h"
 
 static const char HELP[] =
         "SO Lab2 Zad2 - Jakub Karbowski\n"
@@ -24,8 +25,14 @@ int main(int argc, char **argv)
 
     char c = argv[1][0];
     const char *in_file = argv[2];
-
-    printf("Counting %c in %s\n", c, in_file);
+    char_stats_t stats;
+    err = count_chars(in_file, c, &stats);
+    if (!err)
+    {
+        printf("Character occurrences:      %d\n", stats.n_chars);
+        printf("Lines containing character: %d\n", stats.n_lines);
+    }
+    else fprintf(stderr, "Error!\n");
 
     return err;
 }
