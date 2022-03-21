@@ -1,0 +1,3 @@
+#!/usr/bin/env sh
+make stat > /dev/null
+build/out/zad3_stat "$@"

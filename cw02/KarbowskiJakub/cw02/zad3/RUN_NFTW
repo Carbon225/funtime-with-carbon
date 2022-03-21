@@ -1,0 +1,3 @@
+#!/usr/bin/env sh
+make nftw > /dev/null
+build/out/zad3_nftw "$@"
