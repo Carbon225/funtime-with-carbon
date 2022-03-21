@@ -85,17 +85,17 @@ static int process_dir(int root_fd, dir_stats_t *stats)
 
             const char *type;
 
-            if (stat.st_mode & S_IFIFO)
+            if (S_ISFIFO(stat.st_mode))
             {
                 stats->n_fifo++;
                 type = "fifo";
             }
-            else if (stat.st_mode & S_IFCHR)
+            else if (S_ISCHR(stat.st_mode))
             {
                 stats->n_chr++;
                 type = "chr";
             }
-            else if (stat.st_mode & S_IFDIR)
+            else if (S_ISDIR(stat.st_mode))
             {
                 int dir_fd = openat(dirfd(root_dir), ent->d_name, O_RDONLY | O_DIRECTORY);
                 if (dir_fd < 0)
@@ -109,22 +109,22 @@ static int process_dir(int root_fd, dir_stats_t *stats)
                 stats->n_dir++;
                 type = "dir";
             }
-            else if (stat.st_mode & S_IFBLK)
+            else if (S_ISBLK(stat.st_mode))
             {
                 stats->n_blk++;
                 type = "blk";
             }
-            else if (stat.st_mode & S_IFREG)
+            else if (S_ISREG(stat.st_mode))
             {
                 stats->n_reg++;
                 type = "reg";
             }
-            else if (stat.st_mode & S_IFLNK)
+            else if (S_ISLNK(stat.st_mode))
             {
                 stats->n_link++;
                 type = "link";
             }
-            else if (stat.st_mode & S_IFSOCK)
+            else if (S_ISSOCK(stat.st_mode))
             {
                 stats->n_sock++;
                 type = "sock";
