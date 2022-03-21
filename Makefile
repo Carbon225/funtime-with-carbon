@@ -3,6 +3,7 @@ NAME := KarbowskiJakub
 CW_DIRS := $(wildcard cw*)
 TARS := $(CW_DIRS:cw%=$(NAME)-cw%.tar.gz)
 ALL_FILES := $(shell find cw*)
+EXCLUDE := build .*
 
 .PHONY: all
 all: $(TARS)
@@ -12,5 +13,5 @@ clean:
 	rm -f $(TARS)
 
 $(NAME)-cw%.tar.gz: cw% $(ALL_FILES)
-	cd $< && tar czf ../$@ --exclude='build' $(NAME)
+	cd $< && tar czf ../$@ $(EXCLUDE:%=--exclude='%') $(NAME)
 
