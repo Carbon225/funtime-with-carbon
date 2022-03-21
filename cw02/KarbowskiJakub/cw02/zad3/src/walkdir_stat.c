@@ -198,7 +198,7 @@ int walk_dir(const char *path, dir_stats_t *stats)
 
     memset(stats, 0, sizeof *stats);
 
-    int fd = open(path, O_RDONLY | O_DIRECTORY);
+    int fd = open(path, O_RDONLY);
     if (fd < 0) return -1;
 
     // fd will be closed
