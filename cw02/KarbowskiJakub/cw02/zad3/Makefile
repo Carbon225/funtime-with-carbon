@@ -20,7 +20,7 @@ CFLAGS += -Wp,$(INC_DIRS:%=-I%) -O$(OLEVEL) -std=gnu99
 
 
 .PHONY: all
-all: $(OUT_DIR)/zad3
+all: $(OUT_DIR)/zad3 stat nftw
 
 .PHONY: stat
 stat: $(OUT_DIR)/zad3_stat

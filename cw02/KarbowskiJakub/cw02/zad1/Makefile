@@ -21,7 +21,7 @@ CFLAGS += -Wp,$(INC_DIRS:%=-I%) -O$(OLEVEL) -std=gnu99
 
 
 .PHONY: all
-all: $(OUT_DIR)/zad1
+all: $(OUT_DIR)/zad1 lib sys
 
 .PHONY: lib
 lib: $(OUT_DIR)/zad1_lib
