@@ -16,7 +16,7 @@ SRCS := $(shell find $(SRC_DIR) -type f -and -name "*.c" -print)
 HDRS := $(shell find $(INC_DIRS) -type f -and -name "*.h" -print)
 OBJS := $(SRCS:%.c=$(OBJ_DIR)/%.o)
 
-CFLAGS += -Wp,$(INC_DIRS:%=-I%) -O$(OLEVEL) -std=c99
+CFLAGS += -Wp,$(INC_DIRS:%=-I%) -O$(OLEVEL) -std=gnu99
 
 
 .PHONY: all
