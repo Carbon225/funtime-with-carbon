@@ -15,7 +15,7 @@ int main(int argc, char **argv)
     }
 
     dir_stats_t stats;
-    printf("Walking %s...\n", argv[1]);
+    printf("Walking %s\n", argv[1]);
     int err = walk_dir(argv[1], &stats);
     if (err)
     {
