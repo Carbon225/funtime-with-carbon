@@ -59,7 +59,7 @@ $(BENCH_DIR)/input: $(shell find $(SRC_DIR) -type f) Makefile
 	@mkdir -p $(dir $@)
 	@rm -f $@
 	@echo 'Generating input file'
-	@for i in {1..10000}; do cat $^ >> $@; done
+	@for i in `seq 1 10000`; do cat $^ >> $@; done
 
 
 $(OBJ_DIR)/%.lib.o: %.c $(HDRS)
