@@ -118,9 +118,12 @@ int copy_file(const char *in_path, const char *out_path)
         }
     } while (0);
 
-    fclose(fin);
-    fclose(fout);
-    free(buf);
+    if (fin)
+        fclose(fin);
+    if (fout)
+        fclose(fout);
+    if (buf)
+        free(buf);
 
     return err;
 }
