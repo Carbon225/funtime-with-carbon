@@ -79,15 +79,15 @@ static int process_path(const char *path, dir_stats_t *stats)
 
     printf(
         "%s:\n"
-        "- links: %d\n"
+        "- links: %lld\n"
         "- type:  %s\n"
         "- size:  %lldB\n"
         "- atime: %s\n"
         "- mtime: %s\n",
         path,
-        stat.st_nlink,
+        (long long) stat.st_nlink,
         type,
-        stat.st_size,
+        (long long) stat.st_size,
         atime,
         mtime
     );

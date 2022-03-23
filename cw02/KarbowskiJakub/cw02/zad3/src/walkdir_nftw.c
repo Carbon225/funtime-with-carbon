@@ -68,15 +68,15 @@ static int nftw_callback(const char *fpath, const struct stat *sb, int typeflag,
 
     printf(
         "%s:\n"
-        "- links: %d\n"
+        "- links: %lld\n"
         "- type:  %s\n"
         "- size:  %lldB\n"
         "- atime: %s\n"
         "- mtime: %s\n",
         fpath,
-        sb->st_nlink,
+        (long long) sb->st_nlink,
         type,
-        sb->st_size,
+        (long long) sb->st_size,
         atime,
         mtime
     );
