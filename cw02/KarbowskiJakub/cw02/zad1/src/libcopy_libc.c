@@ -11,7 +11,7 @@ int copy_file(const char *in_path, const char *out_path)
     if (!in_path || !out_path) return -1;
 
     int err = 0;
-    fpos_t buf_size = 256;
+    long buf_size = 256;
     char *buf = NULL;
     FILE *fin = NULL;
     FILE *fout = NULL;
@@ -42,9 +42,12 @@ int copy_file(const char *in_path, const char *out_path)
         while (!feof(fin))
         {
             // remember start of line
-            fpos_t line_start;
-            err = fgetpos(fin, &line_start);
-            if (err) break;
+            long line_start = ftell(fin);
+            if (line_start < 0)
+            {
+                err = -1;
+                break;
+            }
 
             // should this line be discarded
             int ignore = 1;
@@ -72,14 +75,17 @@ int copy_file(const char *in_path, const char *out_path)
             if (ignore) continue;
 
             // remember end of line
-            fpos_t line_end;
-            err = fgetpos(fin, &line_end);
-            if (err) break;
+            long line_end = ftell(fin);
+            if (line_end < 0)
+            {
+                err = -1;
+                break;
+            }
 
-            fpos_t line_size = line_end - line_start;
+            long line_size = line_end - line_start;
 
             // go to beginning
-            err = fsetpos(fin, &line_start);
+            err = fseek(fin, line_start, SEEK_SET);
             if (err) break;
 
             // realloc buf if needed
