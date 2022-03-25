@@ -7,9 +7,9 @@ static const char HELP[] =
         "Usage:\n"
         "%s N - start N processes\n";
 
-static void child_task(pid_t pid)
+static void child_task()
 {
-    printf("Hello from %lld\n", (long long) pid);
+    printf("Hello from %lld\n", (long long) getpid());
     exit(0);
 }
 
@@ -32,8 +32,7 @@ int main(int argc, char **argv)
     printf("Spawning %ld processes\n", n);
     for (long i = 0; i < n; ++i)
     {
-        pid_t pid = fork();
-        if (pid) child_task(pid);
+        if (!fork()) child_task();
     }
     while (wait(NULL) >= 0);
 
