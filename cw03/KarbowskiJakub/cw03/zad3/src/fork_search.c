@@ -108,11 +108,6 @@ static int process_path(const char path[], size_t root_path_len, const char patt
             int err = process_dir(path, root_path_len, pattern);
             exit(err);
         }
-
-        int status;
-        if (waitpid(pid, &status, 0) != pid) return -1;
-        if (!WIFEXITED(status) || WEXITSTATUS(status))
-            return -1;
     }
     else
     {
@@ -153,6 +148,13 @@ int process_dir(const char path[], size_t root_path_len, const char pattern[])
 
     closedir(root_dir);
 
+    int status;
+    while (wait(&status) >= 0)
+    {
+        if (!WIFEXITED(status) || WEXITSTATUS(status))
+            err = -1;
+    }
+
     return err;
 }
 
@@ -162,6 +164,13 @@ int fork_search(const char path[], const char pattern[])
     if (!path || !pattern) return -1;
 
     int err = process_path(path, strlen(path), pattern);
+
+    int status;
+    while (wait(&status) >= 0)
+    {
+        if (!WIFEXITED(status) || WEXITSTATUS(status))
+            err = -1;
+    }
 
     return err;
 }
