@@ -18,9 +18,18 @@ CFLAGS += -Wp,$(INC_DIRS:%=-I%) -O$(OLEVEL) -std=gnu99
 .PHONY: all
 all: $(OUT_DIR)/exe
 
+.PHONY: bench
+bench: results.txt
+
 .PHONY: clean
 clean:
 	rm -rf $(BUILD_DIR) $(OUT_DIR)
+
+
+results.txt: $(OUT_DIR)/exe
+	./bench.sh $< > $@
+	@echo '' >> $@
+	@cat comments.txt >> $@
 
 
 $(OBJ_DIR)/%.o: %.c $(HDRS)

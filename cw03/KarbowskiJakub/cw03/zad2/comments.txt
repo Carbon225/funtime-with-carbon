@@ -1,0 +1,4 @@
+Liczba procesów przyśpiesza czas obliczeń
+aż do n=8 (liczba wątków mojego procesora).
+
+Wartość dx zwiększa czas obliczeń liniowo.
