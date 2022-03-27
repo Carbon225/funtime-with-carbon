@@ -61,13 +61,13 @@ static int is_text_file(const char path[])
 {
     char path_quoted[PATH_MAX];
     if (quote_string(path_quoted, sizeof path_quoted, path))
-        return -1;
+        return 0;
 
     char cmd[PATH_MAX + 64];
     sprintf(cmd, "file --brief --mime -- %s", path_quoted);
 
     FILE *f = popen(cmd, "r");
-    if (!f) return -1;
+    if (!f) return 0;
 
     char mime[5];
     int err = fread(mime, 1, 4, f) == 4 ? 0 : -1;
@@ -75,7 +75,7 @@ static int is_text_file(const char path[])
 
     pclose(f);
 
-    if (err) return -1;
+    if (err) return 0;
 
     return !strcmp("text", mime);
 }
@@ -84,11 +84,63 @@ static int search_file(const char path[], size_t root_path_len, const char patte
 {
     if (!is_text_file(path)) return 0;
 
-    const char *rel_path = path + root_path_len + 1;
+    FILE *f = fopen(path, "r");
+    if (!f) return -1;
 
-    printf("%s\n", rel_path);
+    int err = 0;
+    char *buf = NULL;
 
-    return 0;
+    do
+    {
+        size_t pat_len = strlen(pattern);
+        buf = malloc(pat_len + 1);
+        if (!buf)
+        {
+            err = -1;
+            break;
+        }
+        buf[pat_len] = 0;
+
+        int line_num = 1;
+        int col_num = 1;
+
+        while (!feof(f))
+        {
+            long match_start = ftell(f);
+            if (match_start < 0)
+            {
+                err = -1;
+                break;
+            }
+
+            err = fread(buf, 1, pat_len, f) == pat_len ? 0 : -1;
+            if (err)
+            {
+                if (feof(f)) err = 0;
+                break;
+            }
+
+            if (!memcmp(pattern, buf, pat_len))
+            {
+                printf("%s:%d:%d\n", path + root_path_len + 1, line_num, col_num);
+            }
+
+            err = fseek(f, match_start + 1, SEEK_SET);
+            if (err) break;
+
+            if (buf[0] == '\n')
+            {
+                line_num++;
+                col_num = 1;
+            }
+            else col_num++;
+        }
+    } while (0);
+
+    free(buf);
+    fclose(f);
+
+    return err;
 }
 
 int process_dir(const char path[], size_t root_path_len, const char pattern[]);
