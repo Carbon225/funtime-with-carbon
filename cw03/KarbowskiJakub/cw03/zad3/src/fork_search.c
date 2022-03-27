@@ -122,7 +122,12 @@ static int search_file(const char path[], size_t root_path_len, const char patte
 
             if (!memcmp(pattern, buf, pat_len))
             {
-                printf("%s:%d:%d\n", path + root_path_len + 1, line_num, col_num);
+                printf("(PID %lld) %s:%d:%d\n",
+                       (long long) getpid(),
+                       path + root_path_len + 1,
+                       line_num,
+                       col_num
+                       );
             }
 
             err = fseek(f, match_start + 1, SEEK_SET);
