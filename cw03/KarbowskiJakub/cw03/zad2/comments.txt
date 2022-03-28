@@ -1,4 +1,6 @@
-Liczba procesów przyśpiesza czas obliczeń
-aż do n=8 (liczba wątków mojego procesora).
+Liczba procesów przyśpiesza czas obliczeń, najpierw liniowo, potem coraz wolniej.
+W okolicy N=12 (liczba fizycznych rdzeni mojego CPU) widać spadek prędkości.
+Prędkość rośnie aż do N=24 (liczba logicznych wątków mojego CPU).
+Następnie ponownie maleje.
 
 Wartość dx zwiększa czas obliczeń liniowo.

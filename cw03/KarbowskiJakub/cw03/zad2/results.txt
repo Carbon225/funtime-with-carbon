@@ -1,66 +1,144 @@
 n = 1
-real 1.22
-user 1.00
+real 4.24
+user 4.22
 sys 0.00
 n = 2
-real 0.50
-user 0.99
+real 2.16
+user 4.29
 sys 0.00
 n = 3
-real 0.34
-user 1.03
+real 1.50
+user 4.47
 sys 0.00
 n = 4
-real 0.26
-user 1.03
+real 1.11
+user 4.39
 sys 0.00
 n = 5
-real 0.25
-user 1.19
+real 0.90
+user 4.40
 sys 0.00
 n = 6
-real 0.23
-user 1.33
+real 0.75
+user 4.43
 sys 0.00
 n = 7
-real 0.22
-user 1.43
+real 0.65
+user 4.42
 sys 0.00
 n = 8
-real 0.20
-user 1.53
+real 0.56
+user 4.42
 sys 0.00
 n = 9
-real 0.20
-user 1.54
+real 0.50
+user 4.36
 sys 0.00
 n = 10
-real 0.20
-user 1.53
+real 0.46
+user 4.48
 sys 0.00
 n = 11
-real 0.20
-user 1.55
+real 0.42
+user 4.40
 sys 0.00
 n = 12
-real 0.20
-user 1.55
+real 0.38
+user 4.43
 sys 0.00
+n = 13
+real 0.51
+user 4.76
+sys 0.00
+n = 14
+real 0.49
+user 5.18
+sys 0.00
+n = 15
+real 0.46
+user 5.45
+sys 0.00
+n = 16
+real 0.43
+user 5.65
+sys 0.00
+n = 17
+real 0.44
+user 5.94
+sys 0.00
+n = 18
+real 0.41
+user 6.24
+sys 0.00
+n = 19
+real 0.43
+user 6.65
+sys 0.00
+n = 20
+real 0.42
+user 6.98
+sys 0.00
+n = 21
+real 0.42
+user 7.38
+sys 0.00
+n = 22
+real 0.41
+user 7.85
+sys 0.01
+n = 23
+real 0.40
+user 8.46
+sys 0.00
+n = 24
+real 0.39
+user 8.82
+sys 0.00
+n = 25
+real 0.43
+user 8.57
+sys 0.00
+n = 26
+real 0.44
+user 8.66
+sys 0.01
+n = 27
+real 0.47
+user 8.64
+sys 0.00
+n = 28
+real 0.46
+user 8.54
+sys 0.01
+n = 29
+real 0.44
+user 8.55
+sys 0.01
+n = 30
+real 0.43
+user 8.23
+sys 0.01
 
 dx = 0.0000001
-real 0.01
-user 0.01
+real 0.03
+user 0.03
 sys 0.00
 dx = 0.00000001
-real 0.09
-user 0.09
+real 0.23
+user 0.23
 sys 0.00
 dx = 0.000000001
-real 0.96
-user 0.96
+real 2.13
+user 2.12
+sys 0.00
+dx = 0.0000000005
+real 4.24
+user 4.23
 sys 0.00
 
-Liczba procesów przyśpiesza czas obliczeń
-aż do n=8 (liczba wątków mojego procesora).
+Liczba procesów przyśpiesza czas obliczeń, najpierw liniowo, potem coraz wolniej.
+W okolicy N=12 (liczba fizycznych rdzeni mojego CPU) widać spadek prędkości.
+Prędkość rośnie aż do N=24 (liczba logicznych wątków mojego CPU).
+Następnie ponownie maleje.
 
 Wartość dx zwiększa czas obliczeń liniowo.
