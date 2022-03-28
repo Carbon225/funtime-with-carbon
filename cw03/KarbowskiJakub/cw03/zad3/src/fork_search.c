@@ -149,21 +149,21 @@ static int search_file(const char path[], size_t root_path_len, const char patte
     return err;
 }
 
-int process_dir(const char path[], size_t root_path_len, const char pattern[]);
+int process_dir(const char path[], size_t root_path_len, const char pattern[], long depth);
 
-static int process_path(const char path[], size_t root_path_len, const char pattern[])
+static int process_path(const char path[], size_t root_path_len, const char pattern[], long depth)
 {
     struct stat stat;
     if (lstat(path, &stat)) return -1;
 
-    if (S_ISDIR(stat.st_mode))
+    if (S_ISDIR(stat.st_mode) && depth > 0)
     {
         pid_t pid = fork();
         if (pid < 0) return -1;
 
         if (!pid)
         {
-            int err = process_dir(path, root_path_len, pattern);
+            int err = process_dir(path, root_path_len, pattern, depth - 1);
             exit(err);
         }
     }
@@ -175,7 +175,7 @@ static int process_path(const char path[], size_t root_path_len, const char patt
     return 0;
 }
 
-int process_dir(const char path[], size_t root_path_len, const char pattern[])
+int process_dir(const char path[], size_t root_path_len, const char pattern[], long depth)
 {
     int err = 0;
     DIR *root_dir = opendir(path);
@@ -200,7 +200,7 @@ int process_dir(const char path[], size_t root_path_len, const char pattern[])
         strcat(ent_path, "/");
         strcat(ent_path, ent->d_name);
 
-        err = process_path(ent_path, root_path_len, pattern);
+        err = process_path(ent_path, root_path_len, pattern, depth);
         if (err) break;
     }
 
@@ -217,11 +217,11 @@ int process_dir(const char path[], size_t root_path_len, const char pattern[])
 }
 
 
-int fork_search(const char path[], const char pattern[])
+int fork_search(const char path[], const char pattern[], long depth)
 {
     if (!path || !pattern) return -1;
 
-    int err = process_path(path, strlen(path), pattern);
+    int err = process_path(path, strlen(path), pattern, depth);
 
     int status;
     while (wait(&status) >= 0)
