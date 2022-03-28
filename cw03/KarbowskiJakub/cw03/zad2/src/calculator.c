@@ -20,8 +20,9 @@ static void worker_task(int wid, int n_proc, int n_cells)
     double result = 0.;
     for (int i = wid; i < n_cells; i += n_proc)
     {
-        double x = X_FROM + (X_TO - X_FROM) * ((double) i / n_cells);
-        result += my_fun(x) * (X_TO - X_FROM) / n_cells;
+        double dx = (X_TO - X_FROM) / n_cells;
+        double x = dx / 2 + X_FROM + (X_TO - X_FROM) * ((double) i / n_cells);
+        result += my_fun(x) * dx;
     }
 
     char fname[FNAME_LEN];
@@ -51,6 +52,7 @@ static int compute(int n_proc, int n_cells)
         if (!pid) worker_task(wid, n_proc, n_cells);
     }
 
+    int num_completed = 0;
     int status;
     while (wait(&status) >= 0)
     {
@@ -58,7 +60,14 @@ static int compute(int n_proc, int n_cells)
         {
             err = -1;
         }
+        else
+        {
+            num_completed++;
+        }
     }
+
+    if (num_completed != n_proc)
+        err = -1;
 
     return err;
 }
