@@ -10,6 +10,9 @@
 #include <limits.h>
 #include <stdlib.h>
 
+/**
+ * Surround string with single quotes.
+ */
 static int quote_string(char *out, size_t n, const char *in)
 {
     if (!out || !in || out == in) return -1;
@@ -57,6 +60,12 @@ static int quote_string(char *out, size_t n, const char *in)
     return 0;
 }
 
+/**
+ * Check if given file is a text file
+ * using the file command to check
+ * the mime type.
+ * Returns 1 if mime type is text*.
+ */
 static int is_text_file(const char path[])
 {
     char path_quoted[PATH_MAX];
@@ -80,6 +89,11 @@ static int is_text_file(const char path[])
     return !strcmp("text", mime);
 }
 
+/**
+ * Searches given file for given pattern.
+ * Prints the filename, line number
+ * and column number of pattern occurrences.
+ */
 static int search_file(const char path[], size_t root_path_len, const char pattern[])
 {
     if (!is_text_file(path)) return 0;
