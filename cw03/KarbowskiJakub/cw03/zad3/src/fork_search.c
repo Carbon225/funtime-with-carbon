@@ -151,7 +151,7 @@ static int search_file(const char path[], size_t root_path_len, const char patte
 
 int process_dir(const char path[], size_t root_path_len, const char pattern[], long depth);
 
-static int process_path(const char path[], size_t root_path_len, const char pattern[], long depth)
+static int process_path(const char path[], size_t root_path_len, const char pattern[], long depth, DIR *parent_dir)
 {
     struct stat stat;
     if (lstat(path, &stat)) return -1;
@@ -163,6 +163,7 @@ static int process_path(const char path[], size_t root_path_len, const char patt
 
         if (!pid)
         {
+            if (parent_dir) closedir(parent_dir);
             int err = process_dir(path, root_path_len, pattern, depth - 1);
             exit(err);
         }
@@ -200,7 +201,7 @@ int process_dir(const char path[], size_t root_path_len, const char pattern[], l
         strcat(ent_path, "/");
         strcat(ent_path, ent->d_name);
 
-        err = process_path(ent_path, root_path_len, pattern, depth);
+        err = process_path(ent_path, root_path_len, pattern, depth, root_dir);
         if (err) break;
     }
 
@@ -221,7 +222,7 @@ int fork_search(const char path[], const char pattern[], long depth)
 {
     if (!path || !pattern) return -1;
 
-    int err = process_path(path, strlen(path), pattern, depth);
+    int err = process_path(path, strlen(path), pattern, depth, NULL);
 
     int status;
     while (wait(&status) >= 0)
