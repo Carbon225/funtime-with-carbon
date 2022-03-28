@@ -18,6 +18,10 @@ CFLAGS += -Wp,$(INC_DIRS:%=-I%) -O$(OLEVEL) -std=gnu99
 .PHONY: all
 all: $(OUT_DIR)/exe
 
+.PHONY: help
+help:
+	@echo './RUN [ARGS] - run program'
+
 .PHONY: clean
 clean:
 	rm -rf $(BUILD_DIR) $(OUT_DIR)
