@@ -9,7 +9,6 @@
 #include <string.h>
 #include <limits.h>
 #include <stdlib.h>
-#include <time.h>
 
 static int quote_string(char *out, size_t n, const char *in)
 {
