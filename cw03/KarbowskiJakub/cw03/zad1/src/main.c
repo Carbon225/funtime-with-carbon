@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <sys/wait.h>
 
 static const char HELP[] =
         "SO Lab3 Zad1 - Jakub Karbowski\n"
