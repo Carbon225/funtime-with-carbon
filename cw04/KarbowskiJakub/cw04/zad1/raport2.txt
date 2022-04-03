@@ -1,0 +1,15 @@
+ignore:
+fork - YES
+exec - YES
+
+handler:
+fork - YES
+exec - NO
+
+mask:
+fork - YES
+exec - YES
+
+pending:
+fork - NO
+exec - YES
