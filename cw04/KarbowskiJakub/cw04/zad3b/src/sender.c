@@ -13,7 +13,7 @@ typedef enum send_mode_t
 } send_mode_t;
 
 static const char HELP[] =
-        "SO Lab4 Zad3 - Jakub Karbowski\n"
+        "SO Lab4 Zad3b - Jakub Karbowski\n"
         "Usage:\n"
         "%s CATCHER_PID NUM_SIGNALS kill|sigqueue|sigrt\n";
 
