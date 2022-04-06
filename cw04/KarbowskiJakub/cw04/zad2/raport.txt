@@ -1,0 +1,63 @@
+SIGINFO
+
+Output:
+Testing signal 10: User defined signal 1
+Got signal: User defined signal 1
+	Signal number:	10
+	Sender PID:	12593
+Testing signal 1: Hangup
+Got signal: Hangup
+	Signal number:	1
+	Sender PID:	12593
+Testing signal 34: Real-time signal 0
+Got signal: Real-time signal 0
+	Signal number:	34
+	Sender PID:	12593
+
+Struktura siginfo zawiera poprawne informacje.
+
+
+
+
+RESETHAND
+
+Output:
+Testing SA_RESETHAND
+Raise
+Got signal 10: User defined signal 1
+Raise
+
+Pierwszy sygnał jest odbierany przez handler.
+Zgodnie z opisem flagi RESETHAND,
+ustawiony handler zostaje wyłączony
+po pierwszym wykonaniu.
+Drugi sygnał nie zostaje przechwycony.
+
+
+
+
+NODEFER
+
+Output:
+Testing without SA_NODEFER
+Raise
+Raise
+Got signal: User defined signal 1
+	Signal number:	10
+	Sender PID:	12595
+
+Testing with SA_NODEFER
+Raise
+Raise
+Got signal: User defined signal 1
+	Signal number:	10
+	Sender PID:	12596
+
+Oczekiwałem, że flaga NODEFER spowoduje
+wywołanie handlera w trakcie kiedy jest
+on już wykonywany dla poprzedniego sygnału.
+Jednak tak się nie stało.
+Nawet po sztucznym wydłużeniu czasu wykonania handlera
+(przez dodawanie liczb w pętli i opcji -O0)
+nie udało się zaobserwować działania tej flagi.
+Widocznie sygnał jest gubiony zanim zostanie odebrany.
