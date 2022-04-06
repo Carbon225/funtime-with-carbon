@@ -2,8 +2,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <signal.h>
-#include <unistd.h>
-#include <stdbool.h>
 
 typedef enum send_mode_t
 {
@@ -17,19 +15,19 @@ static const char HELP[] =
         "Usage:\n"
         "%s CATCHER_PID NUM_SIGNALS kill|sigqueue|sigrt\n";
 
-static volatile int g_num_received = 0;
-static volatile bool g_got_stop = false;
-static volatile int g_catcher_sent;
+static volatile int g_usr1_count = 0;
+static volatile int g_usr2_count = 0;
+static volatile int g_catcher_received = -1;
 
 static void handler(int sig, siginfo_t *info, void *ucontext)
 {
     if (sig == SIGUSR1 || sig == SIGRTMIN + 0)
-        g_num_received++;
+        g_usr1_count++;
     else if (sig == SIGUSR2 || sig == SIGRTMIN + 1)
-        g_got_stop = true;
+        g_usr2_count++;
 
     if (info->si_code == SI_QUEUE && sig == SIGUSR2)
-        g_catcher_sent = info->si_value.sival_int;
+        g_catcher_received = info->si_value.sival_int;
 }
 
 int main(int argc, char **argv)
@@ -96,6 +94,30 @@ int main(int argc, char **argv)
                 kill(catcher_pid, SIGRTMIN + 0);
                 break;
         }
+
+        // WAIT FOR CONFIRMATION
+
+        sigset_t set, oldset;
+        sigemptyset(&set);
+        sigaddset(&set, SIGUSR1);
+        sigaddset(&set, SIGRTMIN+0);
+        // block USR1 to safely access g_usr1_count
+        sigprocmask(SIG_BLOCK, &set, &oldset);
+        // -- critical section start
+        while (!g_usr1_count)
+        {
+            // -- critical section end
+            // restore old mask and wait for a signal
+            sigsuspend(&oldset);
+            // handler was executed
+            // USR1 is blocked again
+            // -- critical section start
+        }
+        // clear confirmation flag
+        g_usr1_count = 0;
+        // -- critical section end
+        // restore original mask
+        sigprocmask(SIG_SETMASK, &oldset, NULL);
     }
 
     // ------------- SEND STOP
@@ -117,12 +139,30 @@ int main(int argc, char **argv)
 
     // ------------- WAIT FOR PONG
 
-    while (!g_got_stop) pause();
+    sigset_t set, oldset;
+    sigemptyset(&set);
+    sigaddset(&set, SIGUSR2);
+    sigaddset(&set, SIGRTMIN+1);
+    // block USR2 to safely access g_usr2_count
+    sigprocmask(SIG_BLOCK, &set, &oldset);
+    // -- critical section start
+    while (!g_usr2_count)
+    {
+        // -- critical section end
+        // restore old mask and wait for a signal
+        sigsuspend(&oldset);
+        // handler was executed
+        // USR2 is blocked again
+        // -- critical section start
+    }
+    // -- critical section end
+    // restore original mask
+    sigprocmask(SIG_SETMASK, &oldset, NULL);
 
     if (mode == MODE_SIGQUEUE)
-        printf("Catcher got %d/%d signals\n", g_catcher_sent, to_send);
+        printf("Catcher got %d/%d signals\n", g_catcher_received, to_send);
 
-    printf("Sender got %d/%d signals\n", g_num_received, to_send);
+    printf("Sender got %d/%d signals\n", g_usr1_count, to_send);
 
     return 0;
 }
