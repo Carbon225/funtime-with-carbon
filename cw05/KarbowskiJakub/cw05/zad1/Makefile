@@ -21,6 +21,11 @@ all: $(OUT_DIR)/exe
 .PHONY: help
 help:
 	@echo './RUN [ARGS] - run program'
+	@echo 'make test    - run test'
+
+.PHONY: test
+test: $(OUT_DIR)/exe test1.txt
+	$< test1.txt
 
 .PHONY: clean
 clean:

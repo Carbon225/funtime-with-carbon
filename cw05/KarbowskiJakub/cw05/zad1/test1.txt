@@ -1,0 +1,18 @@
+headers = find . -type f -print | grep '.h$'
+count = wc -l
+
+msg1 = echo Headers:
+msg1
+headers
+
+msg2 = echo Count:
+msg2
+headers | count
+
+pipe1 = echo OK | cat | cat | cat
+pipe2 = cat | cat | cat | cat
+pipe3 = cat | cat | cat | cat
+
+msg3 = echo Pipe test:
+msg3
+pipe1 | pipe2 | pipe3
