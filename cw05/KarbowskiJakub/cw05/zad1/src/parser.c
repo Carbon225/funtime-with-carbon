@@ -1,6 +1,7 @@
 #include "parser.h"
 
 #include <stdio.h>
+#include <string.h>
 
 #define CHAR_CLASS(class, chars)                                   \
     static const char CHAR_CLASS_##class[] = chars;                \
@@ -110,32 +111,100 @@ static void parser_new_command(parser_t *parser, char c)
 
 static void parser_execute(parser_t *parser)
 {
-    printf("Exec: ");
-    for (int i = 0; i < parser->num_symbols; ++i)
+    program_t *p = &parser->program;
+
+    if (p->num_exec_exprs >= PARSER_MAX_EXEC_EXPRS)
     {
-        printf("%s", parser->symbols[i]);
-        if (i < parser->num_symbols - 1)
-            printf(" | ");
+        parser->state = PARSER_S_ERR;
+        parser->err_msg = "Exceeded maximum number of execute expressions";
     }
-    printf("\n");
+    else
+    {
+        exec_expr_t *expr = &p->exec_exprs[p->num_exec_exprs];
+        for (int i = 0; i < parser->num_symbols; ++i)
+        {
+            int matches = 0;
+            for (int j = 0; j < p->num_assign_exprs; ++j)
+            {
+                if (!strcmp(parser->symbols[i], p->assign_exprs[j].symbol))
+                {
+                    expr->symbols[i] = j;
+                    matches++;
+                }
+            }
+            if (matches < 1)
+            {
+                parser->state = PARSER_S_ERR;
+                parser->err_msg = "Undefined symbol in execute expression";
+                return;
+            }
+            else if (matches > 1)
+            {
+                parser->state = PARSER_S_ERR;
+                parser->err_msg = "Multiple definitions of symbol";
+                return;
+            }
+        }
+        expr->num_symbols = parser->num_symbols;
+        p->num_exec_exprs++;
+        parser->state = PARSER_S_INIT;
+    }
 }
 
 static void parser_assign(parser_t *parser)
 {
-    printf("Assign: %s = ", parser->symbols[0]);
-    for (int i = 0; i < parser->num_commands; ++i)
+    program_t *p = &parser->program;
+
+    if (p->num_assign_exprs >= PARSER_MAX_ASSIGN_EXPRS)
     {
-        printf("%s", parser->commands[i]);
-        if (i < parser->num_commands - 1)
-            printf(" | ");
+        parser->state = PARSER_S_ERR;
+        parser->err_msg = "Exceeded maximum number of assign expressions";
     }
-    printf("\n");
+    else
+    {
+        assign_expr_t *expr = &p->assign_exprs[p->num_assign_exprs];
+        memcpy(expr->symbol, parser->symbols[0], parser->symbols_length[0] + 1);
+        for (int i = 0; i < parser->num_commands; ++i)
+            memcpy(expr->commands[i], parser->commands[i], parser->commands_length[i] + 1);
+        expr->num_commands = parser->num_commands;
+        p->num_assign_exprs++;
+        parser->state = PARSER_S_INIT;
+    }
+}
+
+void program_print(program_t *p)
+{
+    for (int as = 0; as < p->num_assign_exprs; ++as)
+    {
+        printf("Assign: %s = ", p->assign_exprs[as].symbol);
+        for (int i = 0; i < p->assign_exprs[as].num_commands; ++i)
+        {
+            printf("%s", p->assign_exprs[as].commands[i]);
+            if (i < p->assign_exprs[as].num_commands - 1)
+                printf(" | ");
+        }
+        printf("\n");
+    }
+
+    for (int ex = 0; ex < p->num_exec_exprs; ++ex)
+    {
+        printf("Exec: ");
+        for (int i = 0; i < p->exec_exprs[ex].num_symbols; ++i)
+        {
+            printf("%s", p->assign_exprs[p->exec_exprs[ex].symbols[i]].symbol);
+            if (i < p->exec_exprs[ex].num_symbols - 1)
+                printf(" | ");
+        }
+        printf("\n");
+    }
 }
 
 void parser_init(parser_t *parser)
 {
     parser->state = PARSER_S_INIT;
     parser->comment_active = false;
+    parser->program.num_assign_exprs = 0;
+    parser->program.num_exec_exprs = 0;
 }
 
 int parser_feed(parser_t *parser, char c)
@@ -179,7 +248,6 @@ int parser_feed(parser_t *parser, char c)
             else if (char_is_newline(c))
             {
                 parser_execute(parser);
-                parser->state = PARSER_S_INIT;
             }
             else if (char_is_assign(c))
             {
@@ -205,7 +273,6 @@ int parser_feed(parser_t *parser, char c)
             else if (char_is_newline(c))
             {
                 parser_execute(parser);
-                parser->state = PARSER_S_INIT;
             }
             else if (char_is_assign(c))
             {
@@ -248,7 +315,6 @@ int parser_feed(parser_t *parser, char c)
             else if (char_is_newline(c))
             {
                 parser_execute(parser);
-                parser->state = PARSER_S_INIT;
             }
             else
             {
@@ -262,7 +328,6 @@ int parser_feed(parser_t *parser, char c)
             else if (char_is_newline(c))
             {
                 parser_execute(parser);
-                parser->state = PARSER_S_INIT;
             }
             else if (char_is_pipe(c))
             {
@@ -302,7 +367,6 @@ int parser_feed(parser_t *parser, char c)
             else if (char_is_newline(c))
             {
                 parser_assign(parser);
-                parser->state = PARSER_S_INIT;
             }
             else
             {
