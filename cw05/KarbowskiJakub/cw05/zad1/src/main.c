@@ -37,7 +37,6 @@ int main(int argc, char** argv)
         fprintf(stderr, "%s\n", parser.err_msg);
     else
     {
-        program_print(&parser.program);
         err = program_execute(&parser.program);
     }
 
