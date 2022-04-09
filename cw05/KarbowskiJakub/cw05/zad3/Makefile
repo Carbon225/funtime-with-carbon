@@ -22,7 +22,7 @@ CFLAGS += -O$(OLEVEL) -std=gnu99
 
 
 .PHONY: all
-all: $(OUT_DIR)/consumer $(OUT_DIR)/producer
+all: $(OUT_DIR)/consumer $(OUT_DIR)/producer fifo
 
 .PHONY: help
 help:
@@ -31,7 +31,11 @@ help:
 
 .PHONY: clean
 clean:
-	rm -rf $(BUILD_DIR) $(OUT_DIR)
+	rm -rf $(BUILD_DIR) $(OUT_DIR) fifo
+
+
+fifo:
+	mkfifo $@
 
 
 $(OBJ_DIR)/%.o: %.c $(CONSUMER_HDRS) $(PRODUCER_HDRS)
