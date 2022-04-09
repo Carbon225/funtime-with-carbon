@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "parser.h"
+#include "executor.h"
 
 int main(int argc, char** argv)
 {
@@ -35,7 +36,10 @@ int main(int argc, char** argv)
     if (parser.state == PARSER_S_ERR)
         fprintf(stderr, "%s\n", parser.err_msg);
     else
+    {
         program_print(&parser.program);
+        err = program_execute(&parser.program);
+    }
 
     return err;
 }
