@@ -9,7 +9,7 @@ static const char HELP[] =
 
 static int read_mail_sender()
 {
-    FILE *f = popen("mail -N | sort -k3", "w");
+    FILE *f = popen("mail -N | cut -c3- | sort -k2", "w");
     if (!f)
     {
         fprintf(stderr, "Could open mail\n");
