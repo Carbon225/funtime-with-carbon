@@ -3,6 +3,8 @@
 #include <fcntl.h>
 #include <stdlib.h>
 
+int send_data(int input_fd, int fifo_fd, int burst_size, int line);
+
 static const char HELP[] =
         "SO Lab5 Zad3 - Jakub Karbowski\n"
         "Usage:\n"
@@ -53,8 +55,34 @@ int main(int argc, char **argv)
         return -1;
     }
 
+    int err = send_data(input_fd, fifo_fd, burst_size, line);
+
     close(fifo_fd);
     close(input_fd);
+
+    if (err) fprintf(stderr, "Error\n");
+
+    return err;
+}
+
+int send_data(int input_fd, int fifo_fd, int burst_size, int line)
+{
+    uint8_t *buf = malloc(sizeof(line) + burst_size);
+    uint8_t *data = buf + sizeof(line);
+
+    *(int*)buf = line;
+
+    for (;;)
+    {
+//        usleep(((rand() % 1000) + 1000) * 1000);
+
+        int n = (int) read(input_fd, data, burst_size);
+        if (n <= 0) break;
+
+        write(fifo_fd, buf, sizeof(line) + n);
+    }
+
+    free(buf);
 
     return 0;
 }
