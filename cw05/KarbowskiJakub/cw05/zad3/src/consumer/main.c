@@ -41,7 +41,7 @@ int main(int argc, char **argv)
         return -1;
     }
 
-    int output_fd = open(output_file_path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+    int output_fd = open(output_file_path, O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
     if (output_fd < 0)
     {
         fprintf(stderr, "Could not open output file\n");
@@ -56,12 +56,13 @@ int main(int argc, char **argv)
 
     if (err) fprintf(stderr, "Error\n");
 
-    return 0;
+    return err;
 }
 
 int receive(int output_fd, int fifo_fd, int burst_size)
 {
     uint8_t *buf = malloc(sizeof(int) + burst_size);
+    int *line = (int*) buf;
     uint8_t *data = buf + sizeof(int);
 
     int err = 0;
@@ -77,7 +78,7 @@ int receive(int output_fd, int fifo_fd, int burst_size)
             break;
         }
 
-        err = append_to_line(output_fd, *(int*)buf, data, n - sizeof(int));
+        err = append_to_line(output_fd, *line, data, n - sizeof(int));
         if (err) break;
     }
 
@@ -130,7 +131,6 @@ int append_to_line(int fd, int line, const void *buf, int n)
         int c = fgetc(tmp);
         if (c < 0) break;
 
-        printf("%c\n", c);
         write(fd, &c, 1);
     }
 

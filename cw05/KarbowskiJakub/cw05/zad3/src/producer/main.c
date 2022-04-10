@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <stdlib.h>
+#include <string.h>
 
 int send_data(int input_fd, int fifo_fd, int burst_size, int line);
 
@@ -74,12 +75,14 @@ int send_data(int input_fd, int fifo_fd, int burst_size, int line)
 
     for (;;)
     {
-//        usleep(((rand() % 1000) + 1000) * 1000);
+        usleep(((rand() % 1000) + 1000) * 1000);
 
         int n = (int) read(input_fd, data, burst_size);
         if (n <= 0) break;
 
-        write(fifo_fd, buf, sizeof(line) + n);
+        memset(buf + sizeof(line) + n, 0, n - burst_size);
+
+        write(fifo_fd, buf, sizeof(line) + burst_size);
     }
 
     free(buf);
