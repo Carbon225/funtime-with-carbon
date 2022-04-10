@@ -80,7 +80,7 @@ int send_data(int input_fd, int fifo_fd, int burst_size, int line)
         int n = (int) read(input_fd, data, burst_size);
         if (n <= 0) break;
 
-        memset(buf + sizeof(line) + n, 0, n - burst_size);
+        memset(data + n, 0, burst_size - n);
 
         write(fifo_fd, buf, sizeof(line) + burst_size);
     }
