@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include "executor.h"
 
 #define CHAR_CLASS(class, chars)                                   \
     static const char CHAR_CLASS_##class[] = chars;                \
@@ -112,43 +113,41 @@ static void parser_new_command(parser_t *parser, char c)
 static void parser_execute(parser_t *parser)
 {
     program_t *p = &parser->program;
+    exec_expr_t expr;
 
-    if (p->num_exec_exprs >= PARSER_MAX_EXEC_EXPRS)
+    for (int i = 0; i < parser->num_symbols; ++i)
     {
-        parser->state = PARSER_S_ERR;
-        parser->err_msg = "Exceeded maximum number of execute expressions";
-    }
-    else
-    {
-        exec_expr_t *expr = &p->exec_exprs[p->num_exec_exprs];
-        for (int i = 0; i < parser->num_symbols; ++i)
+        int matches = 0;
+        for (int j = 0; j < p->num_assign_exprs; ++j)
         {
-            int matches = 0;
-            for (int j = 0; j < p->num_assign_exprs; ++j)
+            if (!strcmp(parser->symbols[i], p->assign_exprs[j].symbol))
             {
-                if (!strcmp(parser->symbols[i], p->assign_exprs[j].symbol))
-                {
-                    expr->symbols[i] = j;
-                    matches++;
-                }
-            }
-            if (matches < 1)
-            {
-                parser->state = PARSER_S_ERR;
-                parser->err_msg = "Undefined symbol in execute expression";
-                return;
-            }
-            else if (matches > 1)
-            {
-                parser->state = PARSER_S_ERR;
-                parser->err_msg = "Multiple definitions of symbol";
-                return;
+                expr.symbols[i] = j;
+                matches++;
             }
         }
-        expr->num_symbols = parser->num_symbols;
-        p->num_exec_exprs++;
-        parser->state = PARSER_S_INIT;
+        if (matches < 1)
+        {
+            parser->state = PARSER_S_ERR;
+            parser->err_msg = "Undefined symbol in execute expression";
+            return;
+        }
+        else if (matches > 1)
+        {
+            parser->state = PARSER_S_ERR;
+            parser->err_msg = "Multiple definitions of symbol";
+            return;
+        }
     }
+    expr.num_symbols = parser->num_symbols;
+
+    if (program_execute(p, &expr))
+    {
+        parser->state = PARSER_S_ERR;
+        parser->err_msg = "Execution exception";
+    }
+    else
+        parser->state = PARSER_S_INIT;
 }
 
 static void parser_assign(parser_t *parser)
@@ -185,18 +184,6 @@ void program_print(program_t *p)
         }
         printf("\n");
     }
-
-    for (int ex = 0; ex < p->num_exec_exprs; ++ex)
-    {
-        printf("Exec: ");
-        for (int i = 0; i < p->exec_exprs[ex].num_symbols; ++i)
-        {
-            printf("%s", p->assign_exprs[p->exec_exprs[ex].symbols[i]].symbol);
-            if (i < p->exec_exprs[ex].num_symbols - 1)
-                printf(" | ");
-        }
-        printf("\n");
-    }
 }
 
 void parser_init(parser_t *parser)
@@ -204,7 +191,6 @@ void parser_init(parser_t *parser)
     parser->state = PARSER_S_INIT;
     parser->comment_active = false;
     parser->program.num_assign_exprs = 0;
-    parser->program.num_exec_exprs = 0;
 }
 
 int parser_feed(parser_t *parser, char c)

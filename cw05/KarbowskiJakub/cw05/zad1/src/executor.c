@@ -33,30 +33,26 @@ static int execute_assign(assign_expr_t *ex, int in_fd)
     return last_out_fd;
 }
 
-int program_execute(program_t *prog)
+int program_execute(program_t *prog, const exec_expr_t *exec_expr)
 {
-    for (int iex = 0; iex < prog->num_exec_exprs; ++iex)
+    int last_assign_out_fd = STDIN_FILENO;
+
+    for (int ias = 0; ias < exec_expr->num_symbols; ++ias)
     {
-        exec_expr_t *exec_expr = &prog->exec_exprs[iex];
+        assign_expr_t *assign_expr = &prog->assign_exprs[exec_expr->symbols[ias]];
 
-        int last_assign_out_fd = STDIN_FILENO;
-
-        for (int ias = 0; ias < exec_expr->num_symbols; ++ias)
-        {
-            assign_expr_t *assign_expr = &prog->assign_exprs[exec_expr->symbols[ias]];
-
-            last_assign_out_fd = execute_assign(assign_expr, last_assign_out_fd);
-        }
-
-        for (;;)
-        {
-            char c;
-            int err = read(last_assign_out_fd, &c, 1) == 1 ? 0 : 1;
-            if (err) break;
-            write(STDOUT_FILENO, &c, 1);
-        }
-
-        while (!wait(NULL));
+        last_assign_out_fd = execute_assign(assign_expr, last_assign_out_fd);
     }
+
+    for (;;)
+    {
+        char c;
+        int err = read(last_assign_out_fd, &c, 1) == 1 ? 0 : 1;
+        if (err) break;
+        write(STDOUT_FILENO, &c, 1);
+    }
+
+    while (!wait(NULL));
+
     return 0;
 }

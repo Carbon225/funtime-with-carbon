@@ -3,6 +3,6 @@
 
 #include "parser.h"
 
-int program_execute(program_t *prog);
+int program_execute(program_t *prog, const exec_expr_t *exec_expr);
 
 #endif

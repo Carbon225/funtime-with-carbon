@@ -8,7 +8,6 @@
 #define PARSER_MAX_COMMAND_SIZE (128)
 #define PARSER_MAX_COMMANDS (8)
 #define PARSER_MAX_ASSIGN_EXPRS (16)
-#define PARSER_MAX_EXEC_EXPRS (16)
 
 typedef enum parser_state_t
 {
@@ -45,9 +44,6 @@ typedef struct program_t
 {
     assign_expr_t assign_exprs[PARSER_MAX_ASSIGN_EXPRS];
     int num_assign_exprs;
-
-    exec_expr_t exec_exprs[PARSER_MAX_EXEC_EXPRS];
-    int num_exec_exprs;
 } program_t;
 
 typedef struct parser_t

@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include "parser.h"
-#include "executor.h"
 
 static const char HELP[] =
         "SO Lab5 Zad1 - Jakub Karbowski\n"
@@ -48,11 +47,6 @@ int main(int argc, char** argv)
 
     if (parser.state == PARSER_S_ERR)
         fprintf(stderr, "Parser error:\n%s\n", parser.err_msg);
-    else
-    {
-        err = program_execute(&parser.program);
-        if (err) fprintf(stderr, "Execution error\n");
-    }
 
     return err;
 }
