@@ -2,6 +2,7 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <stdint.h>
 
 int receive(int output_fd, int fifo_fd, int burst_size);
 

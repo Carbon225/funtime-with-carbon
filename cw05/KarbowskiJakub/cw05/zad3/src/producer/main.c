@@ -3,6 +3,7 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 
 int send_data(int input_fd, int fifo_fd, int burst_size, int line);
 
