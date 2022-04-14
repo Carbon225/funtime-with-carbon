@@ -13,12 +13,13 @@ static int execute_command(const char *cmd, int in_fd)
     if (!pid)
     {
         close(out_fds[0]);
-        dup2(in_fd, STDIN_FILENO);
+        if (in_fd >= 0) dup2(in_fd, STDIN_FILENO);
         dup2(out_fds[1], STDOUT_FILENO);
         execl("/bin/sh", "sh", "-c", cmd, NULL);
         exit(0);
     }
     close(out_fds[1]);
+    if (in_fd >= 0) close(in_fd);
 
     return out_fds[0];
 }
@@ -35,7 +36,7 @@ static int execute_assign(assign_expr_t *ex, int in_fd)
 
 int program_execute(program_t *prog, const exec_expr_t *exec_expr)
 {
-    int last_assign_out_fd = STDIN_FILENO;
+    int last_assign_out_fd = -1;
 
     for (int ias = 0; ias < exec_expr->num_symbols; ++ias)
     {
@@ -51,6 +52,8 @@ int program_execute(program_t *prog, const exec_expr_t *exec_expr)
         if (err) break;
         write(STDOUT_FILENO, &c, 1);
     }
+
+    close(last_assign_out_fd);
 
     while (!wait(NULL));
 
