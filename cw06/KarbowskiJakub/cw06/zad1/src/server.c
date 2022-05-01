@@ -10,14 +10,14 @@
 
 #include "common.h"
 
-static volatile bool g_got_sig_int = false;
+static volatile bool g_should_stop = false;
 
 static void sig_handler(int sig)
 {
     switch (sig)
     {
         case SIGINT:
-            g_got_sig_int = true;
+            g_should_stop = true;
             break;
 
         default:
@@ -63,6 +63,7 @@ int server_init(server_t *server)
     {
         server->clients[i] = -1;
     }
+    server->n_clients = 0;
     printf("[I] OK\n");
     return 0;
 }
@@ -103,9 +104,17 @@ int server_delete_queue(server_t *server)
 
 int server_loop(server_t *server)
 {
+    bool is_stopping = false;
+
     printf("[I] Starting server loop\n");
-    while (!g_got_sig_int)
+    while (!g_should_stop || server->n_clients > 0)
     {
+        if (g_should_stop && !is_stopping)
+        {
+            server_stop(server);
+            is_stopping = true;
+        }
+
         c2s_msg_t msg;
         ssize_t n_read = msgrcv(server->server_queue, &msg, sizeof(msg.data), 0, 0);
         if (n_read == -1)
@@ -122,6 +131,11 @@ int server_loop(server_t *server)
             case MESSAGE_INIT:
                 printf("[I] Got INIT message\n");
                 server_handle_init(server, &msg.data.init);
+                break;
+
+            case MESSAGE_STOP:
+                printf("[I] Got STOP message\n");
+                server_handle_stop(server, &msg.data.stop);
                 break;
 
             default:
@@ -153,9 +167,19 @@ int server_handle_init(server_t *server, struct c2s_init_msg_t *msg)
     }
     // save client queue id
     server->clients[client_id] = msg->client_queue;
+    server->n_clients++;
     printf("[I] New client was assigned ID %d\n", client_id);
 
     printf("[I] Sending ID to client\n");
+    if (server_send_init(server, client_id))
+        return -1;
+    printf("[I] OK\n");
+
+    return 0;
+}
+
+int server_send_init(server_t *server, int client_id)
+{
     s2c_msg_t resp;
     resp.type = MESSAGE_INIT;
     resp.data.init.client_id = client_id;
@@ -165,7 +189,46 @@ int server_handle_init(server_t *server, struct c2s_init_msg_t *msg)
         perror("[E] Error sending ID");
         return -1;
     }
-    printf("[I] OK\n");
+    return 0;
+}
 
+int server_stop(server_t *server)
+{
+    printf("[I] Sending STOP to clients\n");
+
+    for (int i = 0; i < SERVER_MAX_CLIENTS; ++i)
+    {
+        if (server->clients[i] != -1)
+        {
+            server_send_stop(server, i);
+        }
+    }
+
+    printf("[I] OK\n");
+    return 0;
+}
+
+int server_send_stop(server_t *server, int client_id)
+{
+    printf("[I] Sending STOP to %d\n", client_id);
+
+    s2c_msg_t msg;
+    msg.type = MESSAGE_STOP;
+    int err = msgsnd(server->clients[client_id], &msg, sizeof(msg.data), 0);
+    if (err)
+    {
+        perror("[E] Error sending STOP");
+        return -1;
+    }
+
+    printf("[I] OK\n");
+    return 0;
+}
+
+int server_handle_stop(server_t *server, struct c2s_stop_msg_t *msg)
+{
+    server->clients[msg->client_id] = -1;
+    server->n_clients--;
+    printf("[I] Removed client %d\n", msg->client_id);
     return 0;
 }

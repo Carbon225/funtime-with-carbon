@@ -10,14 +10,14 @@
 
 #include "common.h"
 
-static volatile bool g_got_sig_int = false;
+static volatile bool g_should_stop = false;
 
 static void sig_handler(int sig)
 {
     switch (sig)
     {
         case SIGINT:
-            g_got_sig_int = true;
+            g_should_stop = true;
             break;
 
         default:
@@ -51,6 +51,8 @@ int main(int argc, char **argv)
 
         if ((err = client_loop(&client))) break;
     } while (0);
+
+    client_send_stop(&client);
 
     client_delete_queue(&client);
 
@@ -140,7 +142,7 @@ int client_loop(client_t *client)
 {
     printf("[I] Starting client loop\n");
 
-    while (!g_got_sig_int)
+    while (!g_should_stop)
     {
         s2c_msg_t msg;
         ssize_t n_read = msgrcv(client->client_queue, &msg, sizeof(msg.data), 0, 0);
@@ -160,6 +162,11 @@ int client_loop(client_t *client)
                 client_handle_init(client, &msg.data.init);
                 break;
 
+            case MESSAGE_STOP:
+                printf("[I] Got STOP message\n");
+                client_handle_stop(client);
+                break;
+
             default:
                 printf("[E] Got unknown message: %ld\n", msg.type);
                 break;
@@ -174,5 +181,30 @@ int client_handle_init(client_t *client, struct s2c_init_msg_t *msg)
 {
     client->client_id = msg->client_id;
     printf("[I] Client was assigned ID %d\n", client->client_id);
+    return 0;
+}
+
+int client_send_stop(client_t *client)
+{
+    printf("[I] Client sending STOP\n");
+
+    c2s_msg_t msg;
+    msg.type = MESSAGE_STOP;
+    msg.data.stop.client_id = client->client_id;
+    int err = msgsnd(client->server_queue, &msg, sizeof(msg.data), 0);
+    if (err)
+    {
+        perror("[E] Error sending STOP");
+        return -1;
+    }
+
+    printf("[I] OK\n");
+    return 0;
+}
+
+int client_handle_stop(client_t *client)
+{
+    printf("[I] Client got STOP\n");
+    g_should_stop = true;
     return 0;
 }
