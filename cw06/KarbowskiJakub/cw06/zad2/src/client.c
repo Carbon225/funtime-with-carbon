@@ -2,8 +2,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/ipc.h>
-#include <sys/msg.h>
 #include <signal.h>
 #include <stdbool.h>
 #include <errno.h>
@@ -57,6 +55,8 @@ int main(int argc, char **argv)
 
     client_send_stop(&client);
 
+    client_close_server(&client);
+
     client_delete_queue(&client);
 
     client_free(&client);
@@ -90,13 +90,28 @@ int client_create_queue(client_t *client)
     }
 
     printf("[I] Creating client queue\n");
-    client->client_queue = msgget(IPC_PRIVATE, 0600);
+
+    struct mq_attr attr;
+    attr.mq_maxmsg = 8;
+    attr.mq_msgsize = sizeof(s2c_msg_t);
+
+    for (int i = 0; i < 100; ++i)
+    {
+        char buf[128];
+        client->client_queue_uid = random();
+        sprintf(buf, CLIENT_QUEUE_PATH_TEMPLATE, client->client_queue_uid);
+        client->client_queue = mq_open(buf, O_RDONLY | O_CREAT | O_EXCL, 0600, &attr);
+        if (client->client_queue != -1) break;
+    }
+
     if (client->client_queue == -1)
     {
         perror("[E] Could not create client queue");
         return -1;
     }
+
     printf("[I] OK\n");
+
     return 0;
 }
 
@@ -109,13 +124,16 @@ int client_delete_queue(client_t *client)
     }
 
     printf("[I] Deleting client queue\n");
-    if (msgctl(client->client_queue, IPC_RMID, NULL))
-    {
-        perror("[E] Count not remove client queue");
-        return -1;
-    }
+
+    mq_close(client->client_queue);
+    char buf[128];
+    sprintf(buf, CLIENT_QUEUE_PATH_TEMPLATE, client->client_queue_uid);
+    mq_unlink(buf);
+
     client->client_queue = -1;
+
     printf("[I] OK\n");
+
     return 0;
 }
 
@@ -129,15 +147,17 @@ int client_open_server(client_t *client)
     }
 
     printf("[I] Opening server queue\n");
-    const char *home = getenv("HOME");
-    key_t key = ftok(home, SERVER_QUEUE_PROJ_ID);
-    client->server_queue = msgget(key,0600);
+
+    client->server_queue = mq_open(SERVER_QUEUE_PATH, O_WRONLY);
+
     if (client->server_queue == -1)
     {
         perror("[E] Could not open server queue");
         return -1;
     }
+
     printf("[I] OK\n");
+
     return 0;
 }
 
@@ -159,8 +179,8 @@ int client_send_init(client_t *client)
 
     c2s_msg_t msg;
     msg.type = MESSAGE_INIT;
-    msg.data.init.client_queue = client->client_queue;
-    int err = msgsnd(client->server_queue, &msg, sizeof(msg.data), 0);
+    msg.data.init.client_queue_uid = client->client_queue_uid;
+    int err = mq_send(client->server_queue, (void*) &msg, sizeof(msg), MESSAGE_INIT);
     if (err)
     {
         perror("[E] Error sending INIT");
@@ -190,84 +210,91 @@ int client_loop(client_t *client)
 
     while (!g_should_stop)
     {
-        struct pollfd fds[1];
+        struct pollfd fds[2];
         fds[0].fd = STDIN_FILENO;
         fds[0].events = POLLIN;
-        if (poll(fds, 1, 100) == 1 && fds[0].revents & POLLIN)
+        fds[1].fd = client->client_queue;
+        fds[1].events = POLLIN;
+
+        if (poll(fds, 2, 0) > 0)
         {
-            char buf[MESSAGE_MAX_BODY_SIZE];
-            if (fgets(buf, sizeof buf, stdin) == buf)
+            if (fds[0].revents & POLLIN)
             {
-                if (buf[strlen(buf) - 1] == '\n')
-                    buf[strlen(buf) - 1] = 0;
+                char buf[MESSAGE_MAX_BODY_SIZE];
+                if (fgets(buf, sizeof buf, stdin) == buf)
+                {
+                    if (buf[strlen(buf) - 1] == '\n')
+                        buf[strlen(buf) - 1] = 0;
 
-                char cmd[64] = {0};
-                sscanf(buf, "%s", cmd);
+                    char cmd[64] = {0};
+                    sscanf(buf, "%s", cmd);
 
-                if (!strcmp("LIST", cmd))
-                {
-                    client_send_list(client);
+                    if (!strcmp("LIST", cmd))
+                    {
+                        client_send_list(client);
+                    }
+                    else if (!strcmp("2ALL", cmd))
+                    {
+                        char msg[MESSAGE_MAX_BODY_SIZE + 1];
+                        if (sscanf(buf, "%s %s", cmd, msg) == 2)
+                            client_send_2all(client, msg);
+                    }
+                    else if (!strcmp("2ONE", cmd))
+                    {
+                        char msg[MESSAGE_MAX_BODY_SIZE + 1];
+                        int recipient_id;
+                        if (sscanf(buf, "%s %d %s", cmd, &recipient_id, msg) == 3)
+                            client_send_2one(client, recipient_id, msg);
+                    }
+                    else if (!strcmp("STOP", cmd))
+                    {
+                        g_should_stop = true;
+                    }
+                    else
+                    {
+                        printf("[E] Invalid command: %s\n", cmd);
+                    }
                 }
-                else if (!strcmp("2ALL", cmd))
+            }
+
+            if (fds[1].revents & POLLIN)
+            {
+                s2c_msg_t msg;
+                ssize_t n_read = mq_receive(client->client_queue, (void*) &msg, sizeof(msg), NULL);
+                if (n_read == -1)
                 {
-                    char msg[MESSAGE_MAX_BODY_SIZE + 1];
-                    if (sscanf(buf, "%s %s", cmd, msg) == 2)
-                        client_send_2all(client, msg);
-                }
-                else if (!strcmp("2ONE", cmd))
-                {
-                    char msg[MESSAGE_MAX_BODY_SIZE + 1];
-                    int recipient_id;
-                    if (sscanf(buf, "%s %d %s", cmd, &recipient_id, msg) == 3)
-                        client_send_2one(client, recipient_id, msg);
-                }
-                else if (!strcmp("STOP", cmd))
-                {
-                    g_should_stop = true;
+                    perror("[E] Error receiving message");
                 }
                 else
                 {
-                    printf("[E] Invalid command: %s\n", cmd);
+                    switch (msg.type)
+                    {
+                        case MESSAGE_INIT:
+                            printf("[I] Got INIT message\n");
+                            client_handle_init(client, &msg.data.init);
+                            break;
+
+                        case MESSAGE_STOP:
+                            printf("[I] Got STOP message\n");
+                            client_handle_stop(client);
+                            break;
+
+                        case MESSAGE_LIST:
+                            printf("[I] Got LIST message\n");
+                            client_handle_list(client, &msg.data.list);
+                            break;
+
+                        case MESSAGE_2ONE:
+                            printf("[I] Got MAIL message\n");
+                            client_handle_mail(client, &msg.data.mail);
+                            break;
+
+                        default:
+                            printf("[E] Got unknown message: %ld\n", msg.type);
+                            break;
+                    }
                 }
             }
-        }
-
-        s2c_msg_t msg;
-        ssize_t n_read = msgrcv(client->client_queue, &msg, sizeof(msg.data), -MESSAGE_MAX, IPC_NOWAIT);
-        if (n_read == -1)
-        {
-            if (errno == EINTR)
-                printf("[I] Interrupted by signal\n");
-            else if (errno != ENOMSG)
-                perror("[E] Error receiving message");
-            continue;
-        }
-
-        switch (msg.type)
-        {
-            case MESSAGE_INIT:
-                printf("[I] Got INIT message\n");
-                client_handle_init(client, &msg.data.init);
-                break;
-
-            case MESSAGE_STOP:
-                printf("[I] Got STOP message\n");
-                client_handle_stop(client);
-                break;
-
-            case MESSAGE_LIST:
-                printf("[I] Got LIST message\n");
-                client_handle_list(client, &msg.data.list);
-                break;
-
-            case MESSAGE_2ONE:
-                printf("[I] Got MAIL message\n");
-                client_handle_mail(client, &msg.data.mail);
-                break;
-
-            default:
-                printf("[E] Got unknown message: %ld\n", msg.type);
-                break;
         }
     }
 
@@ -301,7 +328,7 @@ int client_send_stop(client_t *client)
     c2s_msg_t msg;
     msg.type = MESSAGE_STOP;
     msg.data.stop.client_id = client->client_id;
-    int err = msgsnd(client->server_queue, &msg, sizeof(msg.data), 0);
+    int err = mq_send(client->server_queue, (void*) &msg, sizeof(msg), MESSAGE_STOP);
     if (err)
     {
         perror("[E] Error sending STOP");
@@ -309,7 +336,6 @@ int client_send_stop(client_t *client)
     }
 
     client->client_id = -1;
-    client->server_queue = -1;
 
     printf("[I] OK\n");
     return 0;
@@ -341,7 +367,7 @@ int client_send_list(client_t *client)
     c2s_msg_t msg;
     msg.type = MESSAGE_LIST;
     msg.data.list.client_id = client->client_id;
-    int err = msgsnd(client->server_queue, &msg, sizeof(msg.data), 0);
+    int err = mq_send(client->server_queue, (void*) &msg, sizeof(msg), MESSAGE_LIST);
     if (err)
     {
         perror("[E] Error sending LIST");
@@ -373,7 +399,7 @@ int client_send_2all(client_t *client, const char body[])
     msg.data.to_all.client_id = client->client_id;
     strncpy(msg.data.to_all.body, body, MESSAGE_MAX_BODY_SIZE);
     msg.data.to_all.body[MESSAGE_MAX_BODY_SIZE] = 0;
-    int err = msgsnd(client->server_queue, &msg, sizeof(msg.data), 0);
+    int err = mq_send(client->server_queue, (void*) &msg, sizeof(msg), MESSAGE_2ALL);
     if (err)
     {
         perror("[E] Error sending 2ALL");
@@ -406,7 +432,7 @@ int client_send_2one(client_t *client, int recipient_id, const char body[])
     msg.data.to_one.recipient_id = recipient_id;
     strncpy(msg.data.to_one.body, body, MESSAGE_MAX_BODY_SIZE);
     msg.data.to_one.body[MESSAGE_MAX_BODY_SIZE] = 0;
-    int err = msgsnd(client->server_queue, &msg, sizeof(msg.data), 0);
+    int err = mq_send(client->server_queue, (void*) &msg, sizeof(msg), MESSAGE_2ONE);
     if (err)
     {
         perror("[E] Error sending 2ONE");
@@ -426,5 +452,22 @@ int client_handle_list(client_t *client, struct s2c_list_msg_t *msg)
 int client_handle_mail(client_t *client, struct s2c_mail_msg_t *msg)
 {
     printf("%s\tGot message from %d: %s\n", ctime(&msg->time), msg->sender_id, msg->body);
+    return 0;
+}
+
+int client_close_server(client_t *client)
+{
+    printf("[I] Closing server\n");
+
+    if (client->server_queue == -1)
+    {
+        printf("[E] Cannot close server, not opened\n");
+        return -1;
+    }
+
+    mq_close(client->server_queue);
+
+    printf("[I] OK\n");
+
     return 0;
 }

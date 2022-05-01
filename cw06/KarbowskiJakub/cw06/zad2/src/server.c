@@ -2,8 +2,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/ipc.h>
-#include <sys/msg.h>
 #include <stdbool.h>
 #include <signal.h>
 #include <errno.h>
@@ -86,14 +84,19 @@ int server_create_queue(server_t *server)
     }
 
     printf("[I] Creating server queue\n");
-    const char *home = getenv("HOME");
-    key_t key = ftok(home, SERVER_QUEUE_PROJ_ID);
-    server->server_queue = msgget(key,IPC_CREAT | 0600);
+
+    struct mq_attr attr;
+    attr.mq_maxmsg = 8;
+    attr.mq_msgsize = sizeof(c2s_msg_t);
+
+    server->server_queue = mq_open(SERVER_QUEUE_PATH, O_RDONLY | O_CREAT, 0600, &attr);
+
     if (server->server_queue < 0)
     {
         perror("[E] Could not create server queue");
         return -1;
     }
+
     printf("[I] OK\n");
     return 0;
 }
@@ -107,13 +110,13 @@ int server_delete_queue(server_t *server)
     }
 
     printf("[I] Deleting server queue\n");
-    if (msgctl(server->server_queue, IPC_RMID, NULL))
-    {
-        perror("[E] Could not remove server queue");
-        return -1;
-    }
+
+    mq_close(server->server_queue);
+    mq_unlink(SERVER_QUEUE_PATH);
     server->server_queue = -1;
+
     printf("[I] OK\n");
+
     return 0;
 }
 
@@ -137,7 +140,7 @@ int server_loop(server_t *server)
         }
 
         c2s_msg_t msg;
-        ssize_t n_read = msgrcv(server->server_queue, &msg, sizeof(msg.data), -MESSAGE_MAX, 0);
+        ssize_t n_read = mq_receive(server->server_queue, (void*) &msg, sizeof(msg), NULL);
         if (n_read == -1)
         {
             if (errno == EINTR)
@@ -206,9 +209,18 @@ int server_handle_init(server_t *server, struct c2s_init_msg_t *msg)
         printf("[E] Cannot connect client, client array full\n");
         return -1;
     }
-    // save client queue id
-    server->clients[client_id] = msg->client_queue;
+
+    char buf[128];
+    sprintf(buf, CLIENT_QUEUE_PATH_TEMPLATE, msg->client_queue_uid);
+    server->clients[client_id] = mq_open(buf, O_WRONLY);
+    if (server->clients[client_id] == -1)
+    {
+        printf("[E] Could not open client queue\n");
+        return -1;
+    }
+
     server->n_clients++;
+
     printf("[I] New client was assigned ID %d\n", client_id);
 
     printf("[I] Sending ID to client\n");
@@ -230,7 +242,7 @@ int server_send_init(server_t *server, int client_id)
     s2c_msg_t resp;
     resp.type = MESSAGE_INIT;
     resp.data.init.client_id = client_id;
-    int err = msgsnd(server->clients[client_id], &resp, sizeof(resp.data), 0);
+    int err = mq_send(server->clients[client_id], (void*) &resp, sizeof(resp), MESSAGE_INIT);
     if (err)
     {
         perror("[E] Error sending ID");
@@ -267,7 +279,7 @@ int server_send_stop(server_t *server, int client_id)
 
     s2c_msg_t msg;
     msg.type = MESSAGE_STOP;
-    int err = msgsnd(server->clients[client_id], &msg, sizeof(msg.data), 0);
+    int err = mq_send(server->clients[client_id], (void*) &msg, sizeof(msg), MESSAGE_STOP);
     if (err)
     {
         perror("[E] Error sending STOP");
@@ -285,6 +297,8 @@ int server_handle_stop(server_t *server, struct c2s_stop_msg_t *msg)
         printf("[E] Cannot remove client %d, not registered\n", msg->client_id);
         return -1;
     }
+
+    mq_close(server->clients[msg->client_id]);
 
     server->clients[msg->client_id] = -1;
     server->n_clients--;
@@ -332,7 +346,7 @@ int server_send_list(server_t *server, int target_client_id, int active_client)
     s2c_msg_t msg;
     msg.type = MESSAGE_LIST;
     msg.data.list.client_id = active_client;
-    int err = msgsnd(server->clients[target_client_id], &msg, sizeof(msg.data), 0);
+    int err = mq_send(server->clients[target_client_id], (void*) &msg, sizeof(msg), MESSAGE_LIST);
     if (err)
     {
         perror("[E] Error sending LIST");
@@ -353,7 +367,7 @@ int server_send_mail(server_t *server, int sender_id, int recipient_id, const ch
     strncpy(msg.data.mail.body, body, MESSAGE_MAX_BODY_SIZE);
     msg.data.mail.body[MESSAGE_MAX_BODY_SIZE] = 0;
     msg.data.mail.time = time(NULL);
-    int err = msgsnd(server->clients[recipient_id], &msg, sizeof(msg.data), 0);
+    int err = mq_send(server->clients[recipient_id], (void*) &msg, sizeof(msg), MESSAGE_2ONE);
     if (err)
     {
         perror("[E] Error sending mail");

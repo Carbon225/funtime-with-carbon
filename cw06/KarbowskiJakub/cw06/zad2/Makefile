@@ -35,9 +35,9 @@ $(OBJ_DIR)/%.o: %.c $(HDRS)
 $(OUT_DIR)/server: $(filter-out $(OBJ_DIR)/src/client.o,$(OBJS))
 	@mkdir -p $(dir $@)
 	@echo $^
-	$(CC) $(LDFLAGS) -o $@ $^ -Wl,-lc
+	$(CC) $(LDFLAGS) -o $@ $^ -Wl,-lc,-lrt
 
 $(OUT_DIR)/client: $(filter-out $(OBJ_DIR)/src/server.o,$(OBJS))
 	@mkdir -p $(dir $@)
 	@echo $^
-	$(CC) $(LDFLAGS) -o $@ $^ -Wl,-lc
+	$(CC) $(LDFLAGS) -o $@ $^ -Wl,-lc,-lrt

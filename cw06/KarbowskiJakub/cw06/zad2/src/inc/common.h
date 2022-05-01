@@ -3,18 +3,18 @@
 
 #include <time.h>
 
-#define SERVER_QUEUE_PROJ_ID (225)
+#define SERVER_QUEUE_PATH ("/jk_06_02_server_queue.0")
+#define CLIENT_QUEUE_PATH_TEMPLATE ("/jk_06_02_client_queue.%ld")
 
 #define MESSAGE_MAX_BODY_SIZE (256)
 
 enum message_type_t
 {
-    MESSAGE_STOP = 1,
-    MESSAGE_LIST,
-    MESSAGE_2ALL,
-    MESSAGE_2ONE,
     MESSAGE_INIT,
-    MESSAGE_MAX,
+    MESSAGE_2ONE,
+    MESSAGE_2ALL,
+    MESSAGE_LIST,
+    MESSAGE_STOP,
 };
 
 // client to server message
@@ -25,7 +25,7 @@ typedef struct c2s_msg_t
     {
         struct c2s_init_msg_t
         {
-            int client_queue;
+            long client_queue_uid;
         } init;
 
         struct c2s_list_msg_t

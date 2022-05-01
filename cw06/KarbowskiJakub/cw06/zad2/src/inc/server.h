@@ -1,6 +1,7 @@
 #ifndef JK_06_01_SERVER_H
 #define JK_06_01_SERVER_H
 
+#include <mqueue.h>
 #include <stdbool.h>
 #include "common.h"
 
@@ -8,9 +9,9 @@
 
 typedef struct server_t
 {
-    int server_queue;
+    mqd_t server_queue;
     // client queue ids
-    int clients[SERVER_MAX_CLIENTS];
+    mqd_t clients[SERVER_MAX_CLIENTS];
     int n_clients;
 } server_t;
 

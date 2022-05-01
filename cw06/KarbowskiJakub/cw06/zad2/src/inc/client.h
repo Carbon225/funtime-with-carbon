@@ -1,12 +1,14 @@
 #ifndef JK_06_01_CLIENT_H
 #define JK_06_01_CLIENT_H
 
+#include <mqueue.h>
 #include "common.h"
 
 typedef struct client_t
 {
-    int client_queue;
-    int server_queue;
+    long client_queue_uid;
+    mqd_t client_queue;
+    mqd_t server_queue;
     int client_id;
 } client_t;
 
@@ -22,6 +24,8 @@ int client_delete_queue(client_t *client);
 
 
 int client_open_server(client_t *client);
+
+int client_close_server(client_t *client);
 
 int client_loop(client_t *client);
 
