@@ -8,6 +8,8 @@
 #include <stdbool.h>
 #include <errno.h>
 #include <string.h>
+#include <poll.h>
+#include <unistd.h>
 
 #include "common.h"
 
@@ -188,13 +190,55 @@ int client_loop(client_t *client)
 
     while (!g_should_stop)
     {
+        struct pollfd fds[1];
+        fds[0].fd = STDIN_FILENO;
+        fds[0].events = POLLIN;
+        if (poll(fds, 1, 100) == 1 && fds[0].revents & POLLIN)
+        {
+            char buf[MESSAGE_MAX_BODY_SIZE];
+            if (fgets(buf, sizeof buf, stdin) == buf)
+            {
+                if (buf[strlen(buf) - 1] == '\n')
+                    buf[strlen(buf) - 1] = 0;
+
+                char cmd[64] = {0};
+                sscanf(buf, "%s", cmd);
+
+                if (!strcmp("LIST", cmd))
+                {
+                    client_send_list(client);
+                }
+                else if (!strcmp("2ALL", cmd))
+                {
+                    char msg[MESSAGE_MAX_BODY_SIZE + 1];
+                    if (sscanf(buf, "%s %s", cmd, msg) == 2)
+                        client_send_2all(client, msg);
+                }
+                else if (!strcmp("2ONE", cmd))
+                {
+                    char msg[MESSAGE_MAX_BODY_SIZE + 1];
+                    int recipient_id;
+                    if (sscanf(buf, "%s %d %s", cmd, &recipient_id, msg) == 3)
+                        client_send_2one(client, recipient_id, msg);
+                }
+                else if (!strcmp("STOP", cmd))
+                {
+                    g_should_stop = true;
+                }
+                else
+                {
+                    printf("[E] Invalid command: %s\n", cmd);
+                }
+            }
+        }
+
         s2c_msg_t msg;
-        ssize_t n_read = msgrcv(client->client_queue, &msg, sizeof(msg.data), 0, 0);
+        ssize_t n_read = msgrcv(client->client_queue, &msg, sizeof(msg.data), 0, IPC_NOWAIT);
         if (n_read == -1)
         {
             if (errno == EINTR)
                 printf("[I] Interrupted by signal\n");
-            else
+            else if (errno != ENOMSG)
                 perror("[E] Error receiving message");
             continue;
         }
