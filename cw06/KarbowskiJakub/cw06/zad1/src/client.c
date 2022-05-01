@@ -80,9 +80,15 @@ void client_free(client_t *client)
 
 int client_create_queue(client_t *client)
 {
+    if (client->client_queue != -1)
+    {
+        printf("[E] Cannot create client queue, already exists\n");
+        return -1;
+    }
+
     printf("[I] Creating client queue\n");
     client->client_queue = msgget(IPC_PRIVATE, 0600);
-    if (client->client_queue < 0)
+    if (client->client_queue == -1)
     {
         perror("[E] Could not create client queue");
         return -1;
@@ -93,12 +99,19 @@ int client_create_queue(client_t *client)
 
 int client_delete_queue(client_t *client)
 {
+    if (client->client_queue == -1)
+    {
+        printf("[E] Cannot delete client queue, not created\n");
+        return -1;
+    }
+
     printf("[I] Deleting client queue\n");
     if (msgctl(client->client_queue, IPC_RMID, NULL))
     {
         perror("[E] Count not remove client queue");
         return -1;
     }
+    client->client_queue = -1;
     printf("[I] OK\n");
     return 0;
 }
@@ -106,11 +119,17 @@ int client_delete_queue(client_t *client)
 
 int client_open_server(client_t *client)
 {
+    if (client->server_queue != -1)
+    {
+        printf("[E] Cannot open server queue, already open\n");
+        return -1;
+    }
+
     printf("[I] Opening server queue\n");
     const char *home = getenv("HOME");
     key_t key = ftok(home, SERVER_QUEUE_PROJ_ID);
     client->server_queue = msgget(key,0600);
-    if (client->server_queue < 0)
+    if (client->server_queue == -1)
     {
         perror("[E] Could not open server queue");
         return -1;
@@ -121,6 +140,18 @@ int client_open_server(client_t *client)
 
 int client_send_init(client_t *client)
 {
+    if (client->client_queue == -1)
+    {
+        printf("[E] Cannot send INIT, client queue not opened\n");
+        return -1;
+    }
+
+    if (client->server_queue == -1)
+    {
+        printf("[E] Cannot send INIT, server queue not opened\n");
+        return -1;
+    }
+
     printf("[I] Client sending INIT\n");
 
     c2s_msg_t msg;
@@ -140,6 +171,18 @@ int client_send_init(client_t *client)
 
 int client_loop(client_t *client)
 {
+    if (client->client_queue == -1)
+    {
+        printf("[E] Cannot start loop, client queue not opened\n");
+        return -1;
+    }
+
+    if (client->server_queue == -1)
+    {
+        printf("[E] Cannot start loop, server queue not opened\n");
+        return -1;
+    }
+
     printf("[I] Starting client loop\n");
 
     while (!g_should_stop)
@@ -186,6 +229,18 @@ int client_handle_init(client_t *client, struct s2c_init_msg_t *msg)
 
 int client_send_stop(client_t *client)
 {
+    if (client->client_id == -1)
+    {
+        printf("[E] Cannot send STOP, client ID not assigned\n");
+        return -1;
+    }
+
+    if (client->server_queue == -1)
+    {
+        printf("[E] Cannot send STOP, server queue not opened\n");
+        return -1;
+    }
+
     printf("[I] Client sending STOP\n");
 
     c2s_msg_t msg;
@@ -197,6 +252,9 @@ int client_send_stop(client_t *client)
         perror("[E] Error sending STOP");
         return -1;
     }
+
+    client->client_id = -1;
+    client->server_queue = -1;
 
     printf("[I] OK\n");
     return 0;

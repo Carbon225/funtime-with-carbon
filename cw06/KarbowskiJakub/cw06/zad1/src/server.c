@@ -77,6 +77,12 @@ void server_free(server_t *server)
 
 int server_create_queue(server_t *server)
 {
+    if (server->server_queue != -1)
+    {
+        printf("[E] Cannot create server queue, already exists\n");
+        return -1;
+    }
+
     printf("[I] Creating server queue\n");
     const char *home = getenv("HOME");
     key_t key = ftok(home, SERVER_QUEUE_PROJ_ID);
@@ -92,18 +98,31 @@ int server_create_queue(server_t *server)
 
 int server_delete_queue(server_t *server)
 {
+    if (server->server_queue == -1)
+    {
+        printf("[E] Cannot delete server queue, not created\n");
+        return -1;
+    }
+
     printf("[I] Deleting server queue\n");
     if (msgctl(server->server_queue, IPC_RMID, NULL))
     {
         perror("[E] Could not remove server queue");
         return -1;
     }
+    server->server_queue = -1;
     printf("[I] OK\n");
     return 0;
 }
 
 int server_loop(server_t *server)
 {
+    if (server->server_queue == -1)
+    {
+        printf("[E] Cannot start loop, server queue not opened\n");
+        return -1;
+    }
+
     bool is_stopping = false;
 
     printf("[I] Starting server loop\n");
@@ -180,6 +199,12 @@ int server_handle_init(server_t *server, struct c2s_init_msg_t *msg)
 
 int server_send_init(server_t *server, int client_id)
 {
+    if (server->clients[client_id] == -1)
+    {
+        printf("[E] Cannot send INIT to %d, client not registered\n", client_id);
+        return -1;
+    }
+
     s2c_msg_t resp;
     resp.type = MESSAGE_INIT;
     resp.data.init.client_id = client_id;
@@ -210,6 +235,12 @@ int server_stop(server_t *server)
 
 int server_send_stop(server_t *server, int client_id)
 {
+    if (server->clients[client_id] == -1)
+    {
+        printf("[E] Cannot send STOP to %d, client not registered\n", client_id);
+        return -1;
+    }
+
     printf("[I] Sending STOP to %d\n", client_id);
 
     s2c_msg_t msg;
@@ -227,6 +258,12 @@ int server_send_stop(server_t *server, int client_id)
 
 int server_handle_stop(server_t *server, struct c2s_stop_msg_t *msg)
 {
+    if (server->clients[msg->client_id] == -1)
+    {
+        printf("[E] Cannot remove client %d, not registered\n", msg->client_id);
+        return -1;
+    }
+
     server->clients[msg->client_id] = -1;
     server->n_clients--;
     printf("[I] Removed client %d\n", msg->client_id);
