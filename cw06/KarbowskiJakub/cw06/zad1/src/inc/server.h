@@ -2,10 +2,15 @@
 #define JK_06_01_SERVER_H
 
 #include <stdbool.h>
+#include "common.h"
+
+#define SERVER_MAX_CLIENTS (256)
 
 typedef struct server_t
 {
     int server_queue;
+    // client queue ids
+    int clients[SERVER_MAX_CLIENTS];
 } server_t;
 
 
@@ -20,5 +25,8 @@ int server_delete_queue(server_t *server);
 
 
 int server_loop(server_t *server);
+
+
+int server_handle_init(server_t *server, struct c2s_init_msg_t *msg);
 
 #endif

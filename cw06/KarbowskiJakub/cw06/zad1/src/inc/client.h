@@ -1,10 +1,13 @@
 #ifndef JK_06_01_CLIENT_H
 #define JK_06_01_CLIENT_H
 
+#include "common.h"
+
 typedef struct client_t
 {
     int client_queue;
     int server_queue;
+    int client_id;
 } client_t;
 
 
@@ -24,5 +27,8 @@ int client_send_init(client_t *client);
 
 
 int client_loop(client_t *client);
+
+
+int client_handle_init(client_t *client, struct s2c_init_msg_t *msg);
 
 #endif

@@ -36,6 +36,7 @@ int client_init(client_t *client)
     printf("[I] Creating client\n");
     client->client_queue = -1;
     client->server_queue = -1;
+    client->client_id = -1;
     printf("[I] OK\n");
     return 0;
 }
@@ -91,6 +92,17 @@ int client_open_server(client_t *client)
 int client_send_init(client_t *client)
 {
     printf("[I] Client sending INIT\n");
+
+    c2s_msg_t msg;
+    msg.type = MESSAGE_INIT;
+    msg.data.init.client_queue = client->client_queue;
+    int err = msgsnd(client->server_queue, &msg, sizeof(msg.data), 0);
+    if (err)
+    {
+        perror("[E] Error sending INIT");
+        return -1;
+    }
+
     printf("[I] OK\n");
     return 0;
 }
@@ -99,10 +111,37 @@ int client_send_init(client_t *client)
 int client_loop(client_t *client)
 {
     printf("[I] Starting client loop\n");
+
     for (;;)
     {
-        break;
+        s2c_msg_t msg;
+        ssize_t n_read = msgrcv(client->client_queue, &msg, sizeof(msg.data), 0, 0);
+        if (n_read == -1)
+        {
+            perror("[E] Error receiving message");
+            continue;
+        }
+
+        switch (msg.type)
+        {
+            case MESSAGE_INIT:
+                printf("[I] Got INIT message\n");
+                client_handle_init(client, &msg.data.init);
+                break;
+
+            default:
+                printf("[E] Got unknown message: %ld\n", msg.type);
+                break;
+        }
     }
+
     printf("[I] Client loop done\n");
+    return 0;
+}
+
+int client_handle_init(client_t *client, struct s2c_init_msg_t *msg)
+{
+    client->client_id = msg->client_id;
+    printf("[I] Client was assigned ID %d\n", client->client_id);
     return 0;
 }
