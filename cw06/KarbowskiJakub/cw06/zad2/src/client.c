@@ -236,15 +236,20 @@ int client_loop(client_t *client)
                     else if (!strcmp("2ALL", cmd))
                     {
                         char msg[MESSAGE_MAX_BODY_SIZE + 1];
-                        if (sscanf(buf, "%s %s", cmd, msg) == 2)
-                            client_send_2all(client, msg);
+                        strcpy(msg, buf + 5);
+                        client_send_2all(client, msg);
                     }
                     else if (!strcmp("2ONE", cmd))
                     {
                         char msg[MESSAGE_MAX_BODY_SIZE + 1];
                         int recipient_id;
-                        if (sscanf(buf, "%s %d %s", cmd, &recipient_id, msg) == 3)
+                        char num_buf[32];
+                        sscanf(buf, "%s %s %s", cmd, num_buf, msg);
+                        if (sscanf(buf, "%s %d", cmd, &recipient_id) == 2)
+                        {
+                            strcpy(msg, buf + 5 + strlen(num_buf) + 1);
                             client_send_2one(client, recipient_id, msg);
+                        }
                     }
                     else if (!strcmp("STOP", cmd))
                     {
