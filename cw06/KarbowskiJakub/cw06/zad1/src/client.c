@@ -233,7 +233,7 @@ int client_loop(client_t *client)
         }
 
         s2c_msg_t msg;
-        ssize_t n_read = msgrcv(client->client_queue, &msg, sizeof(msg.data), 0, IPC_NOWAIT);
+        ssize_t n_read = msgrcv(client->client_queue, &msg, sizeof(msg.data), -MESSAGE_MAX, IPC_NOWAIT);
         if (n_read == -1)
         {
             if (errno == EINTR)

@@ -12,6 +12,7 @@ enum message_type_t
     MESSAGE_2ALL,
     MESSAGE_2ONE,
     MESSAGE_INIT,
+    MESSAGE_MAX,
 };
 
 // client to server message

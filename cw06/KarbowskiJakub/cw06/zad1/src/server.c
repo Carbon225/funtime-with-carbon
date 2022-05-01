@@ -136,7 +136,7 @@ int server_loop(server_t *server)
         }
 
         c2s_msg_t msg;
-        ssize_t n_read = msgrcv(server->server_queue, &msg, sizeof(msg.data), 0, 0);
+        ssize_t n_read = msgrcv(server->server_queue, &msg, sizeof(msg.data), -MESSAGE_MAX, 0);
         if (n_read == -1)
         {
             if (errno == EINTR)
