@@ -4,11 +4,39 @@
 #include <stdlib.h>
 #include <sys/ipc.h>
 #include <sys/msg.h>
+#include <signal.h>
+#include <stdbool.h>
+#include <errno.h>
 
 #include "common.h"
 
+static volatile bool g_got_sig_int = false;
+
+static void sig_handler(int sig)
+{
+    switch (sig)
+    {
+        case SIGINT:
+            g_got_sig_int = true;
+            break;
+
+        default:
+            break;
+    }
+}
+
 int main(int argc, char **argv)
 {
+    printf("[I] Installing SIGINT handler\n");
+    struct sigaction act = {0};
+    act.sa_handler = sig_handler;
+    if (sigaction(SIGINT, &act, NULL))
+    {
+        perror("[E] Could not install handler");
+        return -1;
+    }
+    printf("[I] OK\n");
+
     client_t client;
     if (client_init(&client)) return -1;
 
@@ -112,13 +140,16 @@ int client_loop(client_t *client)
 {
     printf("[I] Starting client loop\n");
 
-    for (;;)
+    while (!g_got_sig_int)
     {
         s2c_msg_t msg;
         ssize_t n_read = msgrcv(client->client_queue, &msg, sizeof(msg.data), 0, 0);
         if (n_read == -1)
         {
-            perror("[E] Error receiving message");
+            if (errno == EINTR)
+                printf("[I] Interrupted by signal\n");
+            else
+                perror("[E] Error receiving message");
             continue;
         }
 
