@@ -346,6 +346,7 @@ int server_send_mail(server_t *server, int sender_id, int recipient_id, const ch
     msg.data.mail.sender_id = sender_id;
     strncpy(msg.data.mail.body, body, MESSAGE_MAX_BODY_SIZE);
     msg.data.mail.body[MESSAGE_MAX_BODY_SIZE] = 0;
+    msg.data.mail.time = time(NULL);
     int err = msgsnd(server->clients[recipient_id], &msg, sizeof(msg.data), 0);
     if (err)
     {

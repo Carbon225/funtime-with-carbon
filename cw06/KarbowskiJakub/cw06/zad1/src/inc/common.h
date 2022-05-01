@@ -1,6 +1,8 @@
 #ifndef JK_06_01_COMMON_H
 #define JK_06_01_COMMON_H
 
+#include <time.h>
+
 #define SERVER_QUEUE_PROJ_ID (225)
 
 #define MESSAGE_MAX_BODY_SIZE (256)
@@ -71,6 +73,7 @@ typedef struct s2c_msg_t
         {
             int sender_id;
             char body[MESSAGE_MAX_BODY_SIZE+1];
+            time_t time;
         } mail;
     } data;
 } s2c_msg_t;

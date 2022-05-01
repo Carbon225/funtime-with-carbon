@@ -425,6 +425,6 @@ int client_handle_list(client_t *client, struct s2c_list_msg_t *msg)
 
 int client_handle_mail(client_t *client, struct s2c_mail_msg_t *msg)
 {
-    printf("Got message from %d: %s\n", msg->sender_id, msg->body);
+    printf("%s\tGot message from %d: %s\n", ctime(&msg->time), msg->sender_id, msg->body);
     return 0;
 }
