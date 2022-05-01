@@ -38,6 +38,8 @@ int main(int argc, char **argv)
     }
     printf("[I] OK\n");
 
+    srandom(time(NULL));
+
     client_t client;
     if (client_init(&client)) return -1;
 
