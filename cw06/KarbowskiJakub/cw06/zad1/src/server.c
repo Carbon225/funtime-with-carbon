@@ -10,6 +10,7 @@
 #include <string.h>
 
 #include "common.h"
+#include "logger.h"
 
 static volatile bool g_should_stop = false;
 
@@ -150,26 +151,31 @@ int server_loop(server_t *server)
         {
             case MESSAGE_INIT:
                 printf("[I] Got INIT message\n");
+                log_init();
                 server_handle_init(server, &msg.data.init);
                 break;
 
             case MESSAGE_STOP:
                 printf("[I] Got STOP message\n");
+                log_stop(msg.data.stop.client_id);
                 server_handle_stop(server, &msg.data.stop);
                 break;
 
             case MESSAGE_LIST:
                 printf("[I] Got LIST message\n");
+                log_list(msg.data.list.client_id);
                 server_handle_list(server, &msg.data.list);
                 break;
 
             case MESSAGE_2ALL:
                 printf("[I] Got 2ALL message\n");
+                log_2all(msg.data.to_all.client_id, msg.data.to_all.body);
                 server_handle_2all(server, &msg.data.to_all);
                 break;
 
             case MESSAGE_2ONE:
                 printf("[I] Got 2ONE message\n");
+                log_2one(msg.data.to_one.client_id, msg.data.to_one.recipient_id, msg.data.to_one.body);
                 server_handle_2one(server, &msg.data.to_one);
                 break;
 
