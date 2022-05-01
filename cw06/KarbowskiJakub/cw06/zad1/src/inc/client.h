@@ -30,9 +30,19 @@ int client_send_init(client_t *client);
 
 int client_send_stop(client_t *client);
 
+int client_send_list(client_t *client);
+
+int client_send_2all(client_t *client, const char body[]);
+
+int client_send_2one(client_t *client, int recipient_id, const char body[]);
+
 
 int client_handle_init(client_t *client, struct s2c_init_msg_t *msg);
 
 int client_handle_stop(client_t *client);
+
+int client_handle_list(client_t *client, struct s2c_list_msg_t *msg);
+
+int client_handle_mail(client_t *client, struct s2c_mail_msg_t *msg);
 
 #endif

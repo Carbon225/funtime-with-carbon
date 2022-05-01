@@ -7,6 +7,7 @@
 #include <stdbool.h>
 #include <signal.h>
 #include <errno.h>
+#include <string.h>
 
 #include "common.h"
 
@@ -157,6 +158,21 @@ int server_loop(server_t *server)
                 server_handle_stop(server, &msg.data.stop);
                 break;
 
+            case MESSAGE_LIST:
+                printf("[I] Got LIST message\n");
+                server_handle_list(server, &msg.data.list);
+                break;
+
+            case MESSAGE_2ALL:
+                printf("[I] Got 2ALL message\n");
+                server_handle_2all(server, &msg.data.to_all);
+                break;
+
+            case MESSAGE_2ONE:
+                printf("[I] Got 2ONE message\n");
+                server_handle_2one(server, &msg.data.to_one);
+                break;
+
             default:
                 printf("[E] Got unknown message: %ld\n", msg.type);
                 break;
@@ -267,5 +283,76 @@ int server_handle_stop(server_t *server, struct c2s_stop_msg_t *msg)
     server->clients[msg->client_id] = -1;
     server->n_clients--;
     printf("[I] Removed client %d\n", msg->client_id);
+    return 0;
+}
+
+int server_handle_list(server_t *server, struct c2s_list_msg_t *msg)
+{
+    printf("[I] Sending list of clients to %d\n", msg->client_id);
+    for (int i = 0; i < SERVER_MAX_CLIENTS; ++i)
+    {
+        if (server->clients[i] != -1)
+        {
+            server_send_list(server, msg->client_id, i);
+        }
+    }
+    printf("[I] OK\n");
+    return 0;
+}
+
+int server_handle_2all(server_t *server, struct c2s_2all_msg_t *msg)
+{
+    printf("[I] Sending mail to all clients from %d\n", msg->client_id);
+    for (int i = 0; i < SERVER_MAX_CLIENTS; ++i)
+    {
+        if (server->clients[i] != -1)
+        {
+            server_send_mail(server, msg->client_id, i, msg->body);
+        }
+    }
+    printf("[I] OK\n");
+    return 0;
+}
+
+int server_handle_2one(server_t *server, struct c2s_2one_msg_t *msg)
+{
+    return server_send_mail(server, msg->client_id, msg->recipient_id, msg->body);
+}
+
+int server_send_list(server_t *server, int target_client_id, int active_client)
+{
+    printf("[I] Sending client %d to %d\n", active_client, target_client_id);
+
+    s2c_msg_t msg;
+    msg.type = MESSAGE_LIST;
+    msg.data.list.client_id = active_client;
+    int err = msgsnd(server->clients[target_client_id], &msg, sizeof(msg.data), 0);
+    if (err)
+    {
+        perror("[E] Error sending LIST");
+        return -1;
+    }
+
+    printf("[I] OK\n");
+    return 0;
+}
+
+int server_send_mail(server_t *server, int sender_id, int recipient_id, const char body[])
+{
+    printf("[I] Sending mail from %d to %d\n", sender_id, recipient_id);
+
+    s2c_msg_t msg;
+    msg.type = MESSAGE_2ONE;
+    msg.data.mail.sender_id = sender_id;
+    strncpy(msg.data.mail.body, body, MESSAGE_MAX_BODY_SIZE);
+    msg.data.mail.body[MESSAGE_MAX_BODY_SIZE] = 0;
+    int err = msgsnd(server->clients[recipient_id], &msg, sizeof(msg.data), 0);
+    if (err)
+    {
+        perror("[E] Error sending mail");
+        return -1;
+    }
+
+    printf("[I] OK\n");
     return 0;
 }

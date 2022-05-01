@@ -7,6 +7,7 @@
 #include <signal.h>
 #include <stdbool.h>
 #include <errno.h>
+#include <string.h>
 
 #include "common.h"
 
@@ -210,6 +211,16 @@ int client_loop(client_t *client)
                 client_handle_stop(client);
                 break;
 
+            case MESSAGE_LIST:
+                printf("[I] Got LIST message\n");
+                client_handle_list(client, &msg.data.list);
+                break;
+
+            case MESSAGE_2ONE:
+                printf("[I] Got MAIL message\n");
+                client_handle_mail(client, &msg.data.mail);
+                break;
+
             default:
                 printf("[E] Got unknown message: %ld\n", msg.type);
                 break;
@@ -264,5 +275,112 @@ int client_handle_stop(client_t *client)
 {
     printf("[I] Client got STOP\n");
     g_should_stop = true;
+    return 0;
+}
+
+int client_send_list(client_t *client)
+{
+    if (client->client_id == -1)
+    {
+        printf("[E] Cannot send LIST, client ID not assigned\n");
+        return -1;
+    }
+
+    if (client->server_queue == -1)
+    {
+        printf("[E] Cannot send LIST, server queue not opened\n");
+        return -1;
+    }
+
+    printf("[I] Client sending LIST\n");
+
+    c2s_msg_t msg;
+    msg.type = MESSAGE_LIST;
+    msg.data.list.client_id = client->client_id;
+    int err = msgsnd(client->server_queue, &msg, sizeof(msg.data), 0);
+    if (err)
+    {
+        perror("[E] Error sending LIST");
+        return -1;
+    }
+
+    printf("[I] OK\n");
+    return 0;
+}
+
+int client_send_2all(client_t *client, const char body[])
+{
+    if (client->client_id == -1)
+    {
+        printf("[E] Cannot send 2ALL, client ID not assigned\n");
+        return -1;
+    }
+
+    if (client->server_queue == -1)
+    {
+        printf("[E] Cannot send 2ALL, server queue not opened\n");
+        return -1;
+    }
+
+    printf("[I] Client sending 2ALL\n");
+
+    c2s_msg_t msg;
+    msg.type = MESSAGE_2ALL;
+    msg.data.to_all.client_id = client->client_id;
+    strncpy(msg.data.to_all.body, body, MESSAGE_MAX_BODY_SIZE);
+    msg.data.to_all.body[MESSAGE_MAX_BODY_SIZE] = 0;
+    int err = msgsnd(client->server_queue, &msg, sizeof(msg.data), 0);
+    if (err)
+    {
+        perror("[E] Error sending 2ALL");
+        return -1;
+    }
+
+    printf("[I] OK\n");
+    return 0;
+}
+
+int client_send_2one(client_t *client, int recipient_id, const char body[])
+{
+    if (client->client_id == -1)
+    {
+        printf("[E] Cannot send 2ONE, client ID not assigned\n");
+        return -1;
+    }
+
+    if (client->server_queue == -1)
+    {
+        printf("[E] Cannot send 2ONE, server queue not opened\n");
+        return -1;
+    }
+
+    printf("[I] Client sending 2ONE\n");
+
+    c2s_msg_t msg;
+    msg.type = MESSAGE_2ONE;
+    msg.data.to_one.client_id = client->client_id;
+    msg.data.to_one.recipient_id = recipient_id;
+    strncpy(msg.data.to_one.body, body, MESSAGE_MAX_BODY_SIZE);
+    msg.data.to_one.body[MESSAGE_MAX_BODY_SIZE] = 0;
+    int err = msgsnd(client->server_queue, &msg, sizeof(msg.data), 0);
+    if (err)
+    {
+        perror("[E] Error sending 2ONE");
+        return -1;
+    }
+
+    printf("[I] OK\n");
+    return 0;
+}
+
+int client_handle_list(client_t *client, struct s2c_list_msg_t *msg)
+{
+    printf("Found client: %d\n", msg->client_id);
+    return 0;
+}
+
+int client_handle_mail(client_t *client, struct s2c_mail_msg_t *msg)
+{
+    printf("Got message from %d: %s\n", msg->sender_id, msg->body);
     return 0;
 }
