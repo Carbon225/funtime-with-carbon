@@ -5,6 +5,6 @@ typedef int pizza_t;
 
 void worker_wait(int low, int high);
 
-int millis();
+long millis();
 
 #endif

@@ -26,7 +26,7 @@ pizza_t janusz_take_from_table()
 {
     int usage;
     pizza_t pizza = table_get(&usage);
-    printf("(%d %d) Pobieram pizze: %d. Liczba pizz na stole: %d\n",
+    printf("(%d %ld) Pobieram pizze: %d. Liczba pizz na stole: %d\n",
        getpid(),
        millis(),
        pizza,
@@ -37,7 +37,7 @@ pizza_t janusz_take_from_table()
 
 int janusz_deliver(pizza_t pizza)
 {
-    printf("(%d %d) Dostarczam pizze: %d\n",
+    printf("(%d %ld) Dostarczam pizze: %d\n",
        getpid(),
        millis(),
        pizza

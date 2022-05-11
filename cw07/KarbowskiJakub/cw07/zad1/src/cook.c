@@ -27,7 +27,7 @@ int main(int argc, char **argv)
 pizza_t cook_prepare_pizza()
 {
     pizza_t pizza = rand() % 10;
-    printf("(%d %d) Przygotowuje pizze: %d\n", getpid(), millis(), pizza);
+    printf("(%d %ld) Przygotowuje pizze: %d\n", getpid(), millis(), pizza);
     worker_wait(1, 2);
     return pizza;
 }
@@ -35,7 +35,7 @@ pizza_t cook_prepare_pizza()
 int cook_put_in_furnace(pizza_t pizza)
 {
     int usage = furnace_put(pizza);
-    printf("(%d %d) Dodalem pizze: %d. Liczba pizz w piecu: %d\n",
+    printf("(%d %ld) Dodalem pizze: %d. Liczba pizz w piecu: %d\n",
        getpid(),
        millis(),
        pizza,
@@ -51,7 +51,7 @@ int cook_take_out_and_send()
     pizza_t pizza = furnace_get(&furnace_usage);
     int table_usage = table_put(pizza);
 
-    printf("(%d %d) Wyjmuje pizze: %d. Liczba pizz w piecu: %d. Liczba pizz na stole: %d\n",
+    printf("(%d %ld) Wyjmuje pizze: %d. Liczba pizz w piecu: %d. Liczba pizz na stole: %d\n",
        getpid(),
        millis(),
        pizza,
