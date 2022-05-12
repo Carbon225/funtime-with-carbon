@@ -1,7 +1,7 @@
 #ifndef JK_07_01_FURNACE_H
 #define JK_07_01_FURNACE_H
 
-#include "pizzeria.h"
+#include "pizza.h"
 
 #define FURNACE_SIZE 5
 

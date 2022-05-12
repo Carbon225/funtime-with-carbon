@@ -1,7 +1,7 @@
 #ifndef JK_07_01_TABLE_H
 #define JK_07_01_TABLE_H
 
-#include "pizzeria.h"
+#include "pizza.h"
 
 #define TABLE_SIZE 5
 

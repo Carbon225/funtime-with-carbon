@@ -1,7 +1,7 @@
 #ifndef JK_07_01_COOK_H
 #define JK_07_01_COOK_H
 
-#include "pizzeria.h"
+#include "pizza.h"
 
 pizza_t cook_prepare_pizza();
 

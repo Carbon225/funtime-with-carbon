@@ -1,7 +1,7 @@
 #ifndef JK_07_01_JANUSZ_H
 #define JK_07_01_JANUSZ_H
 
-#include "pizzeria.h"
+#include "pizza.h"
 
 pizza_t janusz_take_from_table();
 
