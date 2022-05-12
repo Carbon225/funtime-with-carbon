@@ -11,8 +11,6 @@
 
 int main(int argc, char **argv)
 {
-    printf("janusz\n");
-
     srand(time(0));
 
     pizzeria_load();
@@ -34,7 +32,7 @@ pizza_t janusz_take_from_table()
 {
     int usage;
     pizza_t pizza = table_get(&usage);
-    printf("(%d %ld) Pobieram pizze: %d. Liczba pizz na stole: %d\n",
+    printf("[janusz] (%d %ld) Pobieram pizze: %d. Liczba pizz na stole: %d\n",
        getpid(),
        millis(),
        pizza,
@@ -45,7 +43,7 @@ pizza_t janusz_take_from_table()
 
 int janusz_deliver(pizza_t pizza)
 {
-    printf("(%d %ld) Dostarczam pizze: %d\n",
+    printf("[janusz] (%d %ld) Dostarczam pizze: %d\n",
        getpid(),
        millis(),
        pizza

@@ -4,8 +4,8 @@
 
 #include "pizzeria.h"
 
-#define N_COOKS 1
-#define N_JANUSZ 1
+#define N_COOKS 2
+#define N_JANUSZ 4
 
 static pid_t cooks[N_COOKS];
 static pid_t janusz[N_JANUSZ];
@@ -27,11 +27,10 @@ static void sig_handler(int sig)
 
 int main(int argc, char **argv)
 {
-    printf("master\n");
-
     struct sigaction act = {0};
     act.sa_handler = sig_handler;
     sigaction(SIGINT, &act, 0);
+    sigaction(SIGTERM, &act, 0);
 
     pizzeria_create();
 
