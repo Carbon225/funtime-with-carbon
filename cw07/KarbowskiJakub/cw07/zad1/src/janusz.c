@@ -1,14 +1,21 @@
 #include "janusz.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
+#include <time.h>
 
+#include "pizzeria.h"
 #include "table.h"
 #include "utils.h"
 
 int main(int argc, char **argv)
 {
     printf("janusz\n");
+
+    srand(time(0));
+
+    pizzeria_load();
 
     pizza_t pizza;
 

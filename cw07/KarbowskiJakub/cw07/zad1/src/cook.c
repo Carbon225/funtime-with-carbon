@@ -3,7 +3,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <time.h>
 
+#include "pizzeria.h"
 #include "furnace.h"
 #include "table.h"
 #include "utils.h"
@@ -11,6 +13,10 @@
 int main(int argc, char **argv)
 {
     printf("cook\n");
+
+    srand(time(0));
+
+    pizzeria_load();
 
     pizza_t pizza;
 
