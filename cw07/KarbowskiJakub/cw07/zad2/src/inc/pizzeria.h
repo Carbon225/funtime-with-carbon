@@ -1,27 +1,33 @@
 #ifndef JK_07_01_PIZZERIA_H
 #define JK_07_01_PIZZERIA_H
 
+#include <semaphore.h>
+
 #include "furnace.h"
 #include "table.h"
 
-enum
-{
-    FURNACE_LOCK_SEM,
-    FURNACE_USED_SEM,
-    FURNACE_FREE_SEM,
-    TABLE_LOCK_SEM,
-    TABLE_USED_SEM,
-    TABLE_FREE_SEM,
-    PIZZERIA_SEM_MAX,
-};
-
 typedef struct pizzeria_t
 {
-    int shm;
-    int sem_set;
     furnace_t furnace;
     table_t table;
 } pizzeria_t;
+
+typedef struct pizzeria_local_t
+{
+    struct
+    {
+        sem_t *lock_sem;
+        sem_t *used_sem;
+        sem_t *free_sem;
+    } furnace;
+
+    struct
+    {
+        sem_t *lock_sem;
+        sem_t *used_sem;
+        sem_t *free_sem;
+    } table;
+} pizzeria_local_t;
 
 int pizzeria_create();
 
@@ -30,5 +36,7 @@ int pizzeria_delete();
 int pizzeria_load();
 
 extern pizzeria_t *pizzeria;
+
+extern pizzeria_local_t pizzeria_local;
 
 #endif

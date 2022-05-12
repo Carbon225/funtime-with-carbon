@@ -1,19 +1,20 @@
 #include "pizzeria.h"
 
+#include <sys/mman.h>
 #include <unistd.h>
-#include <sys/sem.h>
-#include <sys/shm.h>
+#include <fcntl.h>
 
-#define PIZZERIA_SHM_BASE 31253242
+#define PIZZERIA_SHM_PATH "/jk_07_02_pizzeria_shm"
+#define PIZZERIA_SEM_PATH_BASE "/jk_07_02_pizzeria_sem_"
 
 pizzeria_t *pizzeria;
+pizzeria_local_t pizzeria_local;
 
 int pizzeria_create()
 {
-    int mem = shmget(PIZZERIA_SHM_BASE + getpid(), sizeof *pizzeria, IPC_CREAT | 0600);
-    pizzeria = shmat(mem, 0, 0);
-
-    pizzeria->shm = mem;
+    int mem = shm_open(PIZZERIA_SHM_PATH, O_RDWR | O_CREAT, 0600);
+    ftruncate(mem, sizeof *pizzeria);
+    pizzeria = mmap(0, sizeof *pizzeria, PROT_READ | PROT_WRITE, MAP_SHARED, mem, 0);
 
     pizzeria->furnace.write_head = 0;
     pizzeria->furnace.read_head = 0;
@@ -23,32 +24,44 @@ int pizzeria_create()
     pizzeria->table.read_head = 0;
     pizzeria->table.usage = 0;
 
-    pizzeria->sem_set = semget(IPC_PRIVATE, PIZZERIA_SEM_MAX, IPC_CREAT | 0600);
+    pizzeria_local.furnace.free_sem = sem_open(PIZZERIA_SEM_PATH_BASE"furnace_free", O_RDWR | O_CREAT, 0600, FURNACE_SIZE);
+    pizzeria_local.furnace.used_sem = sem_open(PIZZERIA_SEM_PATH_BASE"furnace_used", O_RDWR | O_CREAT, 0600, 0);
+    pizzeria_local.furnace.lock_sem = sem_open(PIZZERIA_SEM_PATH_BASE"furnace_lock", O_RDWR | O_CREAT, 0600, 1);
 
-    // unlocked
-    semctl(pizzeria->sem_set, FURNACE_LOCK_SEM, SETVAL, 1);
-    // no used
-    semctl(pizzeria->sem_set, FURNACE_USED_SEM, SETVAL, 0);
-    // all free
-    semctl(pizzeria->sem_set, FURNACE_FREE_SEM, SETVAL, FURNACE_SIZE);
-
-    semctl(pizzeria->sem_set, TABLE_LOCK_SEM, SETVAL, 1);
-    semctl(pizzeria->sem_set, TABLE_USED_SEM, SETVAL, 0);
-    semctl(pizzeria->sem_set, TABLE_FREE_SEM, SETVAL, TABLE_SIZE);
+    pizzeria_local.table.free_sem = sem_open(PIZZERIA_SEM_PATH_BASE"table_free", O_RDWR | O_CREAT, 0600, TABLE_SIZE);
+    pizzeria_local.table.used_sem = sem_open(PIZZERIA_SEM_PATH_BASE"table_used", O_RDWR | O_CREAT, 0600, 0);
+    pizzeria_local.table.lock_sem = sem_open(PIZZERIA_SEM_PATH_BASE"table_lock", O_RDWR | O_CREAT, 0600, 1);
 
     return 0;
 }
 
 int pizzeria_delete()
 {
-    semctl(pizzeria->sem_set, PIZZERIA_SEM_MAX, IPC_RMID);
-    shmctl(pizzeria->shm, IPC_RMID, 0);
+    shm_unlink(PIZZERIA_SHM_PATH);
+
+    sem_unlink(PIZZERIA_SEM_PATH_BASE"furnace_free");
+    sem_unlink(PIZZERIA_SEM_PATH_BASE"furnace_used");
+    sem_unlink(PIZZERIA_SEM_PATH_BASE"furnace_lock");
+
+    sem_unlink(PIZZERIA_SEM_PATH_BASE"table_free");
+    sem_unlink(PIZZERIA_SEM_PATH_BASE"table_used");
+    sem_unlink(PIZZERIA_SEM_PATH_BASE"table_lock");
+
     return 0;
 }
 
 int pizzeria_load()
 {
-    int mem = shmget(PIZZERIA_SHM_BASE + getppid(), 0, 0);
-    pizzeria = shmat(mem, 0, 0);
+    int mem = shm_open(PIZZERIA_SHM_PATH, O_RDWR, 0600);
+    pizzeria = mmap(0, sizeof *pizzeria, PROT_READ | PROT_WRITE, MAP_SHARED, mem, 0);
+
+    pizzeria_local.furnace.free_sem = sem_open(PIZZERIA_SEM_PATH_BASE"furnace_free", O_RDWR);
+    pizzeria_local.furnace.used_sem = sem_open(PIZZERIA_SEM_PATH_BASE"furnace_used", O_RDWR);
+    pizzeria_local.furnace.lock_sem = sem_open(PIZZERIA_SEM_PATH_BASE"furnace_lock", O_RDWR);
+
+    pizzeria_local.table.free_sem = sem_open(PIZZERIA_SEM_PATH_BASE"table_free", O_RDWR);
+    pizzeria_local.table.used_sem = sem_open(PIZZERIA_SEM_PATH_BASE"table_used", O_RDWR);
+    pizzeria_local.table.lock_sem = sem_open(PIZZERIA_SEM_PATH_BASE"table_lock", O_RDWR);
+
     return 0;
 }

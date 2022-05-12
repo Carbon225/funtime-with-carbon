@@ -1,64 +1,51 @@
 #include "table.h"
 
-#include <sys/sem.h>
-
 #include "pizzeria.h"
 
 int table_put(pizza_t pizza)
 {
-    struct sembuf ops[3];
+    // reserve free space
+    sem_wait(pizzeria_local.table.free_sem);
 
-    // get lock
-    ops[0].sem_num = TABLE_LOCK_SEM;
-    ops[0].sem_op = -1;
-    ops[0].sem_flg = 0;
+    // lock
+    sem_wait(pizzeria_local.table.lock_sem);
 
-    // increment used space
-    ops[1].sem_num = TABLE_USED_SEM;
-    ops[1].sem_op = 1;
-    ops[1].sem_flg = 0;
+    // Above operations are not atomic but:
+    // 1. a free slot is guaranteed to be reserved
+    // 2. exclusive access is acquired
+    // Therefore, modification is safe.
 
-    // get free slot
-    ops[2].sem_num = TABLE_FREE_SEM;
-    ops[2].sem_op = -1;
-    ops[2].sem_flg = 0;
-
-    semop(pizzeria->sem_set, ops, 3);
-
+    // after locking, insert new element
+    // assuming free space is available (it has been reserved)
     pizzeria->table.arr[pizzeria->table.write_head] = pizza;
     pizzeria->table.write_head = (pizzeria->table.write_head + 1) % TABLE_SIZE;
 
     pizzeria->table.usage++;
     int usage = pizzeria->table.usage;
 
+    // inform processes that a new element can be read
+    sem_post(pizzeria_local.table.used_sem);
+    // will not wake other processes because array is locked
+
     // unlock
-    ops[0].sem_op = 1;
-    semop(pizzeria->sem_set, ops, 1);
+    sem_post(pizzeria_local.table.lock_sem);
+    // now other processes can read array
 
     return usage;
 }
 
 pizza_t table_get(int *usage)
 {
-    struct sembuf ops[3];
+    // reserve one element for reading
+    sem_wait(pizzeria_local.table.used_sem);
 
-    // get lock
-    ops[0].sem_num = TABLE_LOCK_SEM;
-    ops[0].sem_op = -1;
-    ops[0].sem_flg = 0;
+    // lock
+    sem_wait(pizzeria_local.table.lock_sem);
 
-    // get element
-    ops[1].sem_num = TABLE_USED_SEM;
-    ops[1].sem_op = -1;
-    ops[1].sem_flg = 0;
+    // One element has been reserved for reading.
+    // Exclusive access is acquired.
 
-    // increment free space
-    ops[2].sem_num = TABLE_FREE_SEM;
-    ops[2].sem_op = 1;
-    ops[2].sem_flg = 0;
-
-    semop(pizzeria->sem_set, ops, 3);
-
+    // read oldest element
     pizza_t pizza = pizzeria->table.arr[pizzeria->table.read_head];
     pizzeria->table.read_head = (pizzeria->table.read_head + 1) % TABLE_SIZE;
 
@@ -67,9 +54,12 @@ pizza_t table_get(int *usage)
     if (usage)
         *usage = pizzeria->table.usage;
 
+    // inform processes that new space is available
+    sem_post(pizzeria_local.table.free_sem);
+
     // unlock
-    ops[0].sem_op = 1;
-    semop(pizzeria->sem_set, ops, 1);
+    sem_post(pizzeria_local.table.lock_sem);
+    // processes waiting on free_sem can resume
 
     return pizza;
 }

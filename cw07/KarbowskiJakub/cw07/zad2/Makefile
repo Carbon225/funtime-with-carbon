@@ -34,14 +34,14 @@ $(OBJ_DIR)/%.o: %.c $(HDRS)
 $(OUT_DIR)/master: $(filter-out $(OBJ_DIR)/src/cook.o $(OBJ_DIR)/src/janusz.o,$(OBJS))
 	@mkdir -p $(dir $@)
 	@echo $^
-	$(CC) $(LDFLAGS) -o $@ $^ -Wl,-lc
+	$(CC) $(LDFLAGS) -o $@ $^ -Wl,-lc,-lpthread,-lrt
 
 $(OUT_DIR)/cook: $(filter-out $(OBJ_DIR)/src/master.o $(OBJ_DIR)/src/janusz.o,$(OBJS))
 	@mkdir -p $(dir $@)
 	@echo $^
-	$(CC) $(LDFLAGS) -o $@ $^ -Wl,-lc
+	$(CC) $(LDFLAGS) -o $@ $^ -Wl,-lc,-lpthread,-lrt
 
 $(OUT_DIR)/janusz: $(filter-out $(OBJ_DIR)/src/cook.o $(OBJ_DIR)/src/master.o,$(OBJS))
 	@mkdir -p $(dir $@)
 	@echo $^
-	$(CC) $(LDFLAGS) -o $@ $^ -Wl,-lc
+	$(CC) $(LDFLAGS) -o $@ $^ -Wl,-lc,-lpthread,-lrt
