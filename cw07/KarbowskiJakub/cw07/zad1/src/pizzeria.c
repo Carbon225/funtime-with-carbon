@@ -1,13 +1,16 @@
 #include "pizzeria.h"
 
+#include <unistd.h>
 #include <sys/sem.h>
 #include <sys/shm.h>
+
+#define PIZZERIA_SHM_BASE 31253242
 
 pizzeria_t *pizzeria;
 
 int pizzeria_create()
 {
-    int mem = shmget(31253242, sizeof *pizzeria, IPC_CREAT | 0600);
+    int mem = shmget(PIZZERIA_SHM_BASE + getpid(), sizeof *pizzeria, IPC_CREAT | 0600);
     pizzeria = shmat(mem, 0, 0);
 
     pizzeria->shm = mem;
@@ -45,7 +48,7 @@ int pizzeria_delete()
 
 int pizzeria_load()
 {
-    int mem = shmget(31253242, 0, 0);
+    int mem = shmget(PIZZERIA_SHM_BASE + getppid(), 0, 0);
     pizzeria = shmat(mem, 0, 0);
     return 0;
 }
