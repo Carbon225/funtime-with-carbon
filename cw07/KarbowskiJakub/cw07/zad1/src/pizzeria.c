@@ -20,21 +20,14 @@ int pizzeria_create()
     pizzeria->table.read_head = 0;
     pizzeria->table.usage = 0;
 
-    pizzeria->sem_set = semget(IPC_PRIVATE, PIZZERIA_SEM_MAX, IPC_CREAT | SEM_R | SEM_A);
+    pizzeria->sem_set = semget(IPC_PRIVATE, PIZZERIA_SEM_MAX, IPC_CREAT | 0600);
 
-    union semun arg;
-    arg.val = 1;
-    semctl(pizzeria->sem_set, FURNACE_LOCK_SEM, SETVAL, arg);
-    arg.val = 0;
-    semctl(pizzeria->sem_set, FURNACE_USED_SEM, SETVAL, arg);
-    arg.val = FURNACE_SIZE;
-    semctl(pizzeria->sem_set, FURNACE_FREE_SEM, SETVAL, arg);
-    arg.val = 1;
-    semctl(pizzeria->sem_set, TABLE_LOCK_SEM, SETVAL, arg);
-    arg.val = 0;
-    semctl(pizzeria->sem_set, TABLE_USED_SEM, SETVAL, arg);
-    arg.val = TABLE_SIZE;
-    semctl(pizzeria->sem_set, TABLE_FREE_SEM, SETVAL, arg);
+    semctl(pizzeria->sem_set, FURNACE_LOCK_SEM, SETVAL, 1);
+    semctl(pizzeria->sem_set, FURNACE_USED_SEM, SETVAL, 0);
+    semctl(pizzeria->sem_set, FURNACE_FREE_SEM, SETVAL, FURNACE_SIZE);
+    semctl(pizzeria->sem_set, TABLE_LOCK_SEM, SETVAL, 1);
+    semctl(pizzeria->sem_set, TABLE_USED_SEM, SETVAL, 0);
+    semctl(pizzeria->sem_set, TABLE_FREE_SEM, SETVAL, TABLE_SIZE);
 
     return 0;
 }
