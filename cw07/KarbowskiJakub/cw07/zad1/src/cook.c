@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <time.h>
 
 #include "pizzeria.h"
 #include "furnace.h"
@@ -12,7 +11,7 @@
 
 int main(int argc, char **argv)
 {
-    srand(time(0));
+    srand(getpid());
 
     pizzeria_load();
 
