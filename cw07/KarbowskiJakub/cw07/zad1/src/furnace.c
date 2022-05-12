@@ -8,14 +8,17 @@ int furnace_put(pizza_t pizza)
 {
     struct sembuf ops[3];
 
+    // get lock
     ops[0].sem_num = FURNACE_LOCK_SEM;
     ops[0].sem_op = -1;
     ops[0].sem_flg = 0;
 
+    // increment used
     ops[1].sem_num = FURNACE_USED_SEM;
     ops[1].sem_op = 1;
     ops[1].sem_flg = 0;
 
+    // get free slot
     ops[2].sem_num = FURNACE_FREE_SEM;
     ops[2].sem_op = -1;
     ops[2].sem_flg = 0;
@@ -28,6 +31,7 @@ int furnace_put(pizza_t pizza)
     pizzeria->furnace.usage++;
     int usage = pizzeria->furnace.usage;
 
+    // unlock
     ops[0].sem_op = 1;
     semop(pizzeria->sem_set, ops, 1);
 
@@ -38,14 +42,17 @@ pizza_t furnace_get(int *usage)
 {
     struct sembuf ops[3];
 
+    // get lock
     ops[0].sem_num = FURNACE_LOCK_SEM;
     ops[0].sem_op = -1;
     ops[0].sem_flg = 0;
 
+    // get element
     ops[1].sem_num = FURNACE_USED_SEM;
     ops[1].sem_op = -1;
     ops[1].sem_flg = 0;
 
+    // increment free space
     ops[2].sem_num = FURNACE_FREE_SEM;
     ops[2].sem_op = 1;
     ops[2].sem_flg = 0;
@@ -60,6 +67,7 @@ pizza_t furnace_get(int *usage)
     if (usage)
         *usage = pizzeria->furnace.usage;
 
+    // unlock
     ops[0].sem_op = 1;
     semop(pizzeria->sem_set, ops, 1);
 
