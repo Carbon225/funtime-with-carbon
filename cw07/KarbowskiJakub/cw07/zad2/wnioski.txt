@@ -1,0 +1,16 @@
+Analizując czasy pracy pracowników widzimy,
+że dostawców powinno być 2 razy więcej niż kucharzy:
+- kucharz: max 1 pizza na 5 s
+- dostawca: min 1 pizza na 10 s
+
+N = 2
+M = 4
+W takiej sytuacji piec i stół nie zapełniają się.
+Jest w nich maksymalnie 1 pizza.
+
+N = 20
+M = 20
+Piec jest zapełniany w 100%.
+Stół nie jest zapełniany, ponieważ ograniczeniem
+przepustowości jest pojemność pieca
+a nie liczba kucharzy.
