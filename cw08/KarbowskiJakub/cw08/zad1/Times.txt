@@ -1,0 +1,103 @@
+Podział "numbers":
+    N = 1
+        [0]: 32214 us
+        [main]: 32281 us
+    N = 2
+        [0]: 15943 us
+        [1]: 15961 us
+        [main]: 16029 us
+    N = 4
+        [0]: 10838 us
+        [1]: 10768 us
+        [2]: 10721 us
+        [3]: 10798 us
+        [main]: 10920 us
+    N = 8
+        [0]: 9438 us
+        [1]: 9432 us
+        [2]: 9326 us
+        [3]: 10902 us
+        [4]: 10796 us
+        [5]: 9346 us
+        [6]: 10376 us
+        [7]: 10676 us
+        [main]: 11014 us
+    N = 16
+        [0]: 11448 us
+        [1]: 19587 us
+        [2]: 11386 us
+        [3]: 19864 us
+        [4]: 20023 us
+        [5]: 14153 us
+        [6]: 11228 us
+        [7]: 11400 us
+        [8]: 10548 us
+        [9]: 10548 us
+        [10]: 7766 us
+        [11]: 8299 us
+        [12]: 7710 us
+        [13]: 8579 us
+        [14]: 8534 us
+        [15]: 6966 us
+        [main]: 21805 us
+Podział "block":
+    N = 1
+        [0]: 161711 us
+        [main]: 161824 us
+    N = 2
+        [0]: 85644 us
+        [1]: 85353 us
+        [main]: 85710 us
+    N = 4
+        [0]: 45264 us
+        [1]: 45370 us
+        [2]: 45684 us
+        [3]: 45663 us
+        [main]: 45770 us
+    N = 8
+        [0]: 31524 us
+        [1]: 30666 us
+        [2]: 28571 us
+        [3]: 38177 us
+        [4]: 36974 us
+        [5]: 38458 us
+        [6]: 37373 us
+        [7]: 30068 us
+        [main]: 38578 us
+    N = 16
+        [0]: 31893 us
+        [1]: 34090 us
+        [2]: 36320 us
+        [3]: 31224 us
+        [4]: 19148 us
+        [5]: 20304 us
+        [6]: 19186 us
+        [7]: 19448 us
+        [8]: 18481 us
+        [9]: 19039 us
+        [10]: 27732 us
+        [11]: 17611 us
+        [12]: 20816 us
+        [13]: 11417 us
+        [14]: 17986 us
+        [15]: 19798 us
+        [main]: 40101 us
+
+Wnioski
+
+Komputer: Macbook Air M1 (8 core)
+Macbook ma 4 rdzenie wysokowydajne i 4 rdzenie low power.
+
+Metody podziału:
+1. Modulo - rdzeń 'n' liczy piksele 'i', dla których i % n_threads == n.
+2. Blokowy - jak w opisie zadania.
+
+Obie metody skalują się prawie liniowo aż do N = 4.
+Dla N = 8 podział modulo lekko zwalnia,
+a podział blokowy lekko przyśpiesza.
+
+Dla N = 16 obie metody zwalniają,
+metoda modulo najbardziej.
+
+Podział modulo jest kilkukrotnie szybszy
+od podziału blokowego.
