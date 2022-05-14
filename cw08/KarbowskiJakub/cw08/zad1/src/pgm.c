@@ -155,7 +155,7 @@ int pgm_load(image_t *img, const char *path)
                 }
                 else if (isspace(c))
                 {
-                    img->data = malloc(img->h * img->w);
+                    img->data = calloc(img->h * img->w, 1);
                     if (!img->data)
                     {
                         state = PARSER_ERR;
