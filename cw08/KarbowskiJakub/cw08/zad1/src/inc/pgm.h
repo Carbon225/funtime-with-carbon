@@ -15,4 +15,6 @@ int pgm_load(image_t *img, const char *path);
 
 int pgm_save(const image_t *img, const char *path);
 
+void image_free(image_t *img);
+
 #endif

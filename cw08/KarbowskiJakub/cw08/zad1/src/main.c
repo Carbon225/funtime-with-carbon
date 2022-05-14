@@ -29,24 +29,25 @@ int main(int argc, char **argv)
     if (pgm_load(&img, argv[3]))
         return -1;
 
+    int err;
+
     if (!strcmp("numbers", argv[2]))
     {
-        if (invert_1(&img, nthr))
-            return -1;
+        err = invert_1(&img, nthr);
     }
     else if (!strcmp("block", argv[2]))
     {
-        if (invert_2(&img, nthr))
-            return -1;
+        err = invert_2(&img, nthr);
     }
     else
     {
         fprintf(stderr, HELP, argv[0]);
-        return -1;
+        err = -1;
     }
 
-    if (pgm_save(&img, argv[4]))
-        return -1;
+    if (!err) err = pgm_save(&img, argv[4]);
 
-    return 0;
+    image_free(&img);
+
+    return err;
 }

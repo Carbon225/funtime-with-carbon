@@ -31,15 +31,18 @@ static int digittoint(int c)
 
 int pgm_load(image_t *img, const char *path)
 {
-    if (!img || !path) return -1;
-
-    FILE *f = fopen(path, "r");
-    if (!f) return -1;
+    if (!img) return -1;
 
     img->w = 0;
     img->h = 0;
     img->max = 0;
     img->data = 0;
+
+    if (!path) return -1;
+
+    FILE *f = fopen(path, "r");
+    if (!f) return -1;
+
     int pixel_i = 0;
     parser_state_t state = PARSER_INIT;
     bool comment_active = false;
@@ -264,4 +267,9 @@ int pgm_save(const image_t *img, const char *path)
     fclose(f);
 
     return 0;
+}
+
+void image_free(image_t *img)
+{
+    if (img) free(img->data);
 }
