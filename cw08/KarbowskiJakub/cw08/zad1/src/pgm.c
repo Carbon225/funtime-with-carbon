@@ -21,6 +21,14 @@ typedef enum parser_state_t
     PARSER_PIXEL,
 } parser_state_t;
 
+static int digittoint(int c)
+{
+    if (c >= '0' && c <= '9')
+        return c - '0';
+    else
+        return 0;
+}
+
 int pgm_load(image_t *img, const char *path)
 {
     if (!img || !path) return -1;
