@@ -3,4 +3,6 @@
 
 void* reindeer_task(void *arg);
 
+void reindeer_vacation();
+
 #endif

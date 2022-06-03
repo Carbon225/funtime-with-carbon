@@ -3,4 +3,8 @@
 
 void* santa_task(void *arg);
 
+void santa_deliver_presents();
+
+void santa_sleep();
+
 #endif

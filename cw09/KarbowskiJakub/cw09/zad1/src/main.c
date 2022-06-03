@@ -1,12 +1,10 @@
 #include <stdio.h>
 #include <pthread.h>
 
+#include "workshop.h"
 #include "santa.h"
 #include "reindeer.h"
 #include "elf.h"
-
-#define N_ELF 10
-#define N_REINDEER 9
 
 int main(int argc, char **argv)
 {
