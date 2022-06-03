@@ -15,11 +15,11 @@ int main(int argc, char **argv)
     pthread_create(&santa, NULL, santa_task, NULL);
     for (int i = 0; i < N_ELF; ++i)
     {
-        pthread_create(&elfs[i], NULL, elf_task, NULL);
+        pthread_create(&elfs[i], NULL, elf_task, (void*)(ssize_t) i);
     }
     for (int i = 0; i < N_REINDEER; ++i)
     {
-        pthread_create(&reindeers[i], NULL, reindeer_task, NULL);
+        pthread_create(&reindeers[i], NULL, reindeer_task, (void*)(ssize_t) i);
     }
 
     pthread_join(santa, NULL);

@@ -5,6 +5,9 @@
 static volatile bool stopped = false;
 static volatile int reindeers = 0;
 static volatile int reindeer_vacation_permits = 0;
+static volatile int elfs = 0;
+static volatile int elf_queue[N_ELF];
+static volatile int elf_helps = 0;
 
 static pthread_mutex_t workshop_mtx = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t workshop_cond = PTHREAD_COND_INITIALIZER;
@@ -72,4 +75,36 @@ void workshop_get_reindeer_vacation_permit()
 int workshop_get_reindeer_vacation_permits()
 {
     return reindeer_vacation_permits;
+}
+
+int workshop_get_elfs()
+{
+    return elfs;
+}
+
+int workshop_get_elf(int i)
+{
+    return elf_queue[i];
+}
+
+void workshop_elf_queue(int id)
+{
+    elf_queue[elfs] = id;
+    elfs++;
+    pthread_cond_broadcast(&workshop_cond);
+}
+
+void workshop_elf_get_help()
+{
+    while (!elf_helps)
+        workshop_wait();
+    elf_helps--;
+    pthread_cond_broadcast(&workshop_cond);
+}
+
+void workshop_elf_give_help()
+{
+    elf_helps++;
+    elfs--;
+    pthread_cond_broadcast(&workshop_cond);
 }

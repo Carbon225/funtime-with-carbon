@@ -36,6 +36,18 @@ void* santa_task(void *arg)
             }
         }
 
+        if (workshop_get_elfs() == 3)
+        {
+            printf("Mikolaj: rozwiazuje problemy elfow %d %d %d\n", workshop_get_elf(0), workshop_get_elf(1), workshop_get_elf(2));
+            workshop_unlock();
+            sleep((rand() % 2) + 1);
+            workshop_lock();
+            for (int i = 0; i < 3; ++i)
+            {
+                workshop_elf_give_help();
+            }
+        }
+
         printf("Mikolaj: zasypiam\n");
     }
 
@@ -49,6 +61,7 @@ void* santa_task(void *arg)
 void santa_sleep()
 {
     while (!(workshop_get_reindeers() == 9 ||
+             workshop_get_elfs() == 3 ||
              workshop_is_stopped()))
         workshop_wait();
 }

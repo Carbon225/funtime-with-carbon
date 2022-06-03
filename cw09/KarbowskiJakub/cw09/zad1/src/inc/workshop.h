@@ -28,4 +28,14 @@ void workshop_get_reindeer_vacation_permit();
 
 int workshop_get_reindeer_vacation_permits();
 
+int workshop_get_elfs();
+
+int workshop_get_elf(int i);
+
+void workshop_elf_queue(int id);
+
+void workshop_elf_get_help();
+
+void workshop_elf_give_help();
+
 #endif
