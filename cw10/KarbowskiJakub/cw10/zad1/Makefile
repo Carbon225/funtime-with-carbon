@@ -32,12 +32,12 @@ $(OBJ_DIR)/%.o: %.c $(HDRS)
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-$(OUT_DIR)/server: $(filter-out $(OBJ_DIR)/src/client.o,$(OBJS))
+$(OUT_DIR)/server: $(filter-out $(OBJ_DIR)/src/client_main.o,$(OBJS))
 	@mkdir -p $(dir $@)
 	@echo $^
 	$(CC) $(LDFLAGS) -o $@ $^ -Wl,-lc
 
-$(OUT_DIR)/client: $(filter-out $(OBJ_DIR)/src/server.o,$(OBJS))
+$(OUT_DIR)/client: $(filter-out $(OBJ_DIR)/src/server_main.o,$(OBJS))
 	@mkdir -p $(dir $@)
 	@echo $^
 	$(CC) $(LDFLAGS) -o $@ $^ -Wl,-lc
