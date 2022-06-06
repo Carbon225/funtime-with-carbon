@@ -11,15 +11,9 @@
 #define GMAN_MAX_PLAYERS (256)
 #define SERVER_MAX_CONNECTIONS (256)
 
-typedef enum connection_status_t
-{
-    CONNECTION_STATUS_DISCONNECTED,
-    CONNECTION_STATUS_ACTIVE,
-} connection_status_t;
-
 typedef struct server_client_conn_t
 {
-    connection_status_t status;
+    bool active;
     int sock;
     uint8_t recv_buf[PACKET_MAX_SIZE];
     int recv_count;

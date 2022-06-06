@@ -22,7 +22,7 @@ err_t server_open(server_t *server, short port)
 
     for (int i = 0; i < SERVER_MAX_CONNECTIONS; ++i)
     {
-        server->connections[i].status = CONNECTION_STATUS_DISCONNECTED;
+        server->connections[i].active = false;
         server->connections[i].sock = -1;
         server->connections[i].recv_count = 0;
     }
@@ -45,7 +45,7 @@ void server_close(server_t *server)
 
     for (int i = 0; i < SERVER_MAX_CONNECTIONS; ++i)
     {
-        if (server->connections[i].status == CONNECTION_STATUS_ACTIVE)
+        if (server->connections[i].active)
         {
             close(server->connections[i].sock);
         }
@@ -72,7 +72,7 @@ err_t server_loop(server_t *server)
 
         for (int i = 0; i < SERVER_MAX_CONNECTIONS; ++i)
         {
-            if (server->connections[i].status == CONNECTION_STATUS_ACTIVE)
+            if (server->connections[i].active)
             {
                 fds[i].fd = server->connections[i].sock;
                 fds[i].events = POLLIN;
@@ -237,9 +237,9 @@ err_t server_add_connection(server_t *server, int sock)
 {
     for (int i = 0; i < SERVER_MAX_CONNECTIONS; ++i)
     {
-        if (server->connections[i].status == CONNECTION_STATUS_DISCONNECTED)
+        if (!server->connections[i].active)
         {
-            server->connections[i].status = CONNECTION_STATUS_ACTIVE;
+            server->connections[i].active = true;
             server->connections[i].sock = sock;
             server->connections[i].recv_count = 0;
             return ERR_OK;
