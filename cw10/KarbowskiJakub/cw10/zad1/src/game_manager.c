@@ -60,6 +60,46 @@ err_t gman_add_player(server_t *server, int con, const char *name)
 
 err_t gman_execute_move(server_t *server, const char *name, pos_t move)
 {
+    for (int i = 0; i < GMAN_MAX_PLAYERS; ++i)
+    {
+        if (!server->game_manager.players[i].active)
+            continue;
+
+        if (strcmp(name, server->game_manager.players[i].name) != 0)
+            continue;
+
+        int session = server->game_manager.players[i].session;
+
+        if (session == -1)
+            return ERR_GENERIC;
+
+        int ret = game_move(&server->game_manager.sessions[session].game, move);
+
+        packet_t resp;
+        resp.type = PACKET_STATUS;
+        resp.status.err = ret;
+
+        if (packet_send(server->connections[server->game_manager.players[i].con].sock, &resp))
+            LOGE("Failed sending response");
+
+        if (!ret)
+        {
+            packet_t packet;
+            packet.type = PACKET_GAME;
+            packet.game.game = server->game_manager.sessions[session].game;
+
+            packet.game.player = PLAYER_X;
+            memcpy(packet.game.opponent, server->game_manager.players[server->game_manager.sessions[session].p2].name, PLAYER_NAME_MAX);
+            packet_send(server->connections[server->game_manager.players[server->game_manager.sessions[session].p1].con].sock, &packet);
+
+            packet.game.player = PLAYER_O;
+            memcpy(packet.game.opponent, server->game_manager.players[server->game_manager.sessions[session].p1].name, PLAYER_NAME_MAX);
+            packet_send(server->connections[server->game_manager.players[server->game_manager.sessions[session].p2].con].sock, &packet);
+        }
+
+        return ERR_OK;
+    }
+
     return ERR_GENERIC;
 }
 

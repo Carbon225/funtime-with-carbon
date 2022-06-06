@@ -8,21 +8,21 @@
 typedef enum player_t
 {
     PLAYER_X = 1,
-    PLAYER_O = -1,
+    PLAYER_O = 2,
 } player_t;
 
 typedef enum winner_t
 {
     WINNER_DRAW = 0,
     WINNER_X = 1,
-    WINNER_O = -1,
+    WINNER_O = 2,
 } winner_t;
 
 typedef enum field_t
 {
     FIELD_EMPTY = 0,
     FIELD_X = 1,
-    FIELD_O = -1,
+    FIELD_O = 2,
 } field_t;
 
 typedef enum pos_t

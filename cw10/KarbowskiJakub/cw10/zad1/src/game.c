@@ -147,7 +147,7 @@ err_t game_move(game_t *game, pos_t pos)
 
     game->board[pos] = (field_t) game->next_player;
 
-    game->next_player = -game->next_player;
+    game->next_player = game->next_player == PLAYER_X ? PLAYER_O : PLAYER_X;
 
     update_game_winner(game);
 

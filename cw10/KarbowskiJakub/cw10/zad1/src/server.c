@@ -276,12 +276,6 @@ err_t server_handle_move(server_t *server, int con, const move_packet_t *packet)
     if (err) LOGE("Failed executing move");
     else LOGI("Executed move");
 
-    packet_t resp;
-    resp.type = PACKET_STATUS;
-    resp.status.err = err;
-    if (packet_send(server->connections[con].sock, &resp))
-        LOGE("Failed sending response");
-
     return ERR_OK;
 }
 
