@@ -30,6 +30,7 @@ typedef struct game_packet_t
 {
     player_t player;
     game_t game;
+    char opponent[PLAYER_NAME_MAX + 1];
 } game_packet_t;
 
 typedef struct status_packet_t

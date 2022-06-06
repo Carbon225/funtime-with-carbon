@@ -31,6 +31,9 @@ err_t client_log_in(client_session_t *session, const char *name);
 
 err_t client_send_move(client_session_t *session, pos_t pos);
 
-err_t client_get_game(client_session_t *session, game_t *game, player_t *player);
+err_t client_get_game(client_session_t *session,
+                      game_t *game,
+                      player_t *player,
+                      char *opponent);
 
 #endif

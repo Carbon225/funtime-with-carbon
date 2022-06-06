@@ -13,4 +13,8 @@ err_t gman_execute_move(server_t *server, const char *name, pos_t move);
 
 err_t gman_process(server_t *server);
 
+err_t gman_find_pairs(server_t *server);
+
+err_t gman_create_session(server_t *server, int p1, int p2);
+
 #endif

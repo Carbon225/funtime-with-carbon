@@ -23,12 +23,16 @@ typedef struct gman_player_t
 {
     bool active;
     int con;
-    char name[PLAYER_NAME_MAX];
+    char name[PLAYER_NAME_MAX + 1];
+    int session;
 } gman_player_t;
 
 typedef struct gman_game_session_t
 {
     bool active;
+    int p1;
+    int p2;
+    game_t game;
 } gman_game_session_t;
 
 typedef struct gman_t

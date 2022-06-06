@@ -76,9 +76,13 @@ err_t client_send_move(client_session_t *session, pos_t pos)
     return client_get_response(session);
 }
 
-err_t client_get_game(client_session_t *session, game_t *game, player_t *player)
+err_t client_get_game(client_session_t *session,
+                      game_t *game,
+                      player_t *player,
+                      char *opponent)
 {
-    if (!session || !game || !player) return ERR_GENERIC;
+    if (!session || !game || !player || !opponent)
+        return ERR_GENERIC;
 
     packet_t packet;
     packet_receive(session->sock, &packet);
@@ -93,6 +97,7 @@ err_t client_get_game(client_session_t *session, game_t *game, player_t *player)
 
     *game = packet.game.game;
     *player = packet.game.player;
+    memcpy(opponent, packet.game.opponent, PLAYER_NAME_MAX);
 
     return ERR_OK;
 }

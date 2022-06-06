@@ -62,12 +62,14 @@ int main(int argc, char **argv)
     {
         game_t game;
         player_t player;
-        if (client_get_game(&session, &game, &player))
+        char opponent[PLAYER_NAME_MAX];
+        if (client_get_game(&session, &game, &player, opponent))
         {
             LOGE("Error getting game");
             break;
         }
 
+        printf("Your opponent is [%s]\n", opponent);
         game_print(&game);
         printf("You are %c\n", player == PLAYER_X ? 'X' : 'O');
 

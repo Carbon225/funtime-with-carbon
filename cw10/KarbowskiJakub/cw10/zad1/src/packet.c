@@ -46,7 +46,9 @@ void packet_create(void *buf, const packet_t *packet)
 
             b[14] = packet->game.player;
 
-            b[0] = 15;
+            memcpy((char*)(b + 15), packet->game.opponent, PLAYER_NAME_MAX);
+
+            b[0] = 15 + PLAYER_NAME_MAX;
             break;
 
         case PACKET_STATUS:
@@ -93,6 +95,8 @@ void packet_parse(const void *buf, packet_t *packet)
             packet->game.game.is_over = b[13];
 
             packet->game.player = b[14];
+
+            memcpy(packet->game.opponent, (char*)(b + 15), PLAYER_NAME_MAX);
             break;
 
         case PACKET_STATUS:
