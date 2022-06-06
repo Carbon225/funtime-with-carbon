@@ -46,4 +46,6 @@ err_t server_handle_init(server_t *server, int con, const init_packet_t *packet)
 
 err_t server_handle_move(server_t *server, int con, const move_packet_t *packet);
 
+void server_kill_client(server_t *server, int con);
+
 #endif

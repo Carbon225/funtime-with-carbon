@@ -116,6 +116,7 @@ err_t server_loop(server_t *server)
                         if (n != 1)
                         {
                             LOGE("Socket read error");
+                            server_kill_client(server, i);
                         }
                         else
                         {
@@ -134,6 +135,7 @@ err_t server_loop(server_t *server)
                         if (n <= 0)
                         {
                             LOGE("Socket read error");
+                            server_kill_client(server, i);
                         }
                         else
                         {
@@ -274,4 +276,14 @@ err_t server_handle_move(server_t *server, int con, const move_packet_t *packet)
         LOGE("Failed sending response");
 
     return ERR_OK;
+}
+
+void server_kill_client(server_t *server, int con)
+{
+    if (!server) return;
+    if (server->connections[con].sock != -1)
+    {
+        close(server->connections[con].sock);
+        LOGI("Killed client %i", con);
+    }
 }
