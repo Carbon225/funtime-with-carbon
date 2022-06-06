@@ -24,7 +24,7 @@ err_t client_connect(client_session_t *session,
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0)
     {
-        perror("Could not create socket");
+        LOGE("Could not create socket");
         return ERR_GENERIC;
     }
 
@@ -34,16 +34,12 @@ err_t client_connect(client_session_t *session,
     addr.sin_port = htons(8080);
     addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
-    LOGI("Connecting to 127.0.0.1:8080");
-
     if (connect(sockfd, (const struct sockaddr*) &addr, sizeof addr) != 0)
     {
-        perror("Could not connect to server");
+        LOGE("Could not connect to server");
         close(sockfd);
         return ERR_GENERIC;
     }
-
-    LOGI("Connected\n");
 
     session->sock = sockfd;
 

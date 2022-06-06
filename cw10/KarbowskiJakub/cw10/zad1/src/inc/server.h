@@ -46,6 +46,4 @@ err_t server_handle_init(server_t *server, int con, const init_packet_t *packet)
 
 err_t server_handle_move(server_t *server, int con, const move_packet_t *packet);
 
-err_t server_handle_game(server_t *server, int con, const game_packet_t *packet);
-
 #endif

@@ -213,7 +213,8 @@ err_t server_handle_packet(server_t *server, int con, const packet_t *packet)
             return server_handle_move(server, con, &packet->move);
 
         case PACKET_GAME:
-            return server_handle_game(server, con, &packet->game);
+            LOGE("Server got game packet! (should never happen)");
+            break;
 
         case PACKET_STATUS:
             LOGI("Got status %d: %s", packet->status.err, err_msg(packet->status.err));
@@ -245,21 +246,14 @@ err_t server_handle_init(server_t *server, int con, const init_packet_t *packet)
 
     err_t err = gman_add_player(&server->game_manager, packet->name);
 
-    if (err)
-    {
-        LOGE("Failed to add player");
+    if (err) LOGE("Failed to add player");
+    else LOGI("Added new player");
 
-        packet_t resp;
-        resp.type = PACKET_STATUS;
-        resp.status.err = err;
-
-        if (packet_send(server->connections[con].sock, &resp))
-            LOGE("Failed sending response");
-
-        return ERR_OK;
-    }
-
-    LOGI("Added new player");
+    packet_t resp;
+    resp.type = PACKET_STATUS;
+    resp.status.err = err;
+    if (packet_send(server->connections[con].sock, &resp))
+        LOGE("Failed sending response");
 
     return ERR_OK;
 }
@@ -270,27 +264,14 @@ err_t server_handle_move(server_t *server, int con, const move_packet_t *packet)
 
     err_t err = gman_execute_move(&server->game_manager, packet->name, packet->pos);
 
-    if (err)
-    {
-        LOGE("Failed executing move");
+    if (err) LOGE("Failed executing move");
+    else LOGI("Executed move");
 
-        packet_t resp;
-        resp.type = PACKET_STATUS;
-        resp.status.err = err;
-
-        if (packet_send(server->connections[con].sock, &resp))
-            LOGE("Failed sending response");
-
-        return ERR_OK;
-    }
-
-    LOGI("Executed move");
+    packet_t resp;
+    resp.type = PACKET_STATUS;
+    resp.status.err = err;
+    if (packet_send(server->connections[con].sock, &resp))
+        LOGE("Failed sending response");
 
     return ERR_OK;
-}
-
-int server_handle_game(server_t *server, int con, const game_packet_t *packet)
-{
-    LOGE("Server got game packet! (should never happen)");
-    return ERR_GENERIC;
 }
