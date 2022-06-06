@@ -48,6 +48,4 @@ int server_handle_move(server_t *server, int con, const move_packet_t *packet);
 
 int server_handle_game(server_t *server, int con, const game_packet_t *packet);
 
-int server_send_packet(int sock, const packet_t *packet);
-
 #endif

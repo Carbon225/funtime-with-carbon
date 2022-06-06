@@ -49,8 +49,12 @@ typedef struct packet_t
     };
 } packet_t;
 
-void create_packet(void *buf, const packet_t *packet);
+void packet_create(void *buf, const packet_t *packet);
 
-void parse_packet(const void *buf, packet_t *packet);
+void packet_parse(const void *buf, packet_t *packet);
+
+int packet_send(int fd, const packet_t *packet);
+
+int packet_receive(int fd, packet_t *packet);
 
 #endif

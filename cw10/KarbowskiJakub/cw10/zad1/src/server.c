@@ -145,7 +145,7 @@ int server_loop(server_t *server)
                                 LOGI("Got full packet");
 
                                 packet_t packet;
-                                parse_packet(conn->recv_buf, &packet);
+                                packet_parse(conn->recv_buf, &packet);
 
                                 if (server_handle_packet(server, i, &packet))
                                 {
@@ -257,7 +257,7 @@ int server_handle_init(server_t *server, int con, const init_packet_t *packet)
         resp.status.err = err;
         strncpy(resp.status.msg, gman_err_msg(err), STATUS_MESSAGE_MAX);
 
-        if (server_send_packet(server->connections[con].sock, &resp))
+        if (packet_send(server->connections[con].sock, &resp))
             LOGE("Failed sending response");
 
         return -1;
@@ -283,7 +283,7 @@ int server_handle_move(server_t *server, int con, const move_packet_t *packet)
         resp.status.err = err;
         strncpy(resp.status.msg, gman_err_msg(err), STATUS_MESSAGE_MAX);
 
-        if (server_send_packet(server->connections[con].sock, &resp))
+        if (packet_send(server->connections[con].sock, &resp))
             LOGE("Failed sending response");
 
         return -1;
@@ -298,11 +298,4 @@ int server_handle_game(server_t *server, int con, const game_packet_t *packet)
 {
     LOGE("Server got game packet! (should never happen)");
     return -1;
-}
-
-int server_send_packet(int sock, const packet_t *packet)
-{
-    uint8_t buf[PACKET_MAX_SIZE];
-    create_packet(buf, packet);
-    return write(sock, buf, buf[0]) == buf[0] ? 0 : -1;
 }

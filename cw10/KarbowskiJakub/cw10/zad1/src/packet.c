@@ -2,8 +2,11 @@
 
 #include <stdint.h>
 #include <string.h>
+#include <unistd.h>
 
-void create_packet(void *buf, const packet_t *packet)
+#include "log.h"
+
+void packet_create(void *buf, const packet_t *packet)
 {
     if (!buf || !packet) return;
 
@@ -54,7 +57,7 @@ void create_packet(void *buf, const packet_t *packet)
     }
 }
 
-void parse_packet(const void *buf, packet_t *packet)
+void packet_parse(const void *buf, packet_t *packet)
 {
     if (!buf || !packet) return;
 
@@ -98,4 +101,45 @@ void parse_packet(const void *buf, packet_t *packet)
             memcpy(packet->status.msg, (char*)(b + 3), STATUS_MESSAGE_MAX);
             break;
     }
+}
+
+int packet_send(int fd, const packet_t *packet)
+{
+    if (!packet) return -1;
+    uint8_t buf[PACKET_MAX_SIZE];
+    packet_create(buf, packet);
+    return write(fd, buf, buf[0]) == buf[0] ? 0 : -1;
+}
+
+int packet_receive(int fd, packet_t *packet)
+{
+    if (!packet) return -1;
+
+    uint8_t buf[PACKET_MAX_SIZE];
+
+    if (read(fd, buf, 1) != 1)
+    {
+        LOGE("Socket read error");
+        return -1;
+    }
+
+    int count = 1;
+    LOGI("Got packet length %d", buf[0]);
+
+    while (count < buf[0])
+    {
+        int n = (int) read(fd, buf + count, buf[0] - count);
+        if (n <= 0)
+        {
+            LOGE("Socket read error");
+            return -1;
+        }
+        count += n;
+        LOGI("Got %d/%d bytes", count, buf[0]);
+    }
+
+    LOGI("Got full packet");
+    packet_parse(buf, packet);
+
+    return 0;
 }

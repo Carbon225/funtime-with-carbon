@@ -27,6 +27,4 @@ int client_get_game(client_session_t *session);
 
 int client_send_move(client_session_t *session, pos_t pos);
 
-int client_recv_packet(client_session_t *session, packet_t *packet);
-
 #endif
