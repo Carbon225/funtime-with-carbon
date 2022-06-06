@@ -50,16 +50,42 @@ err_t client_connect(client_session_t *session,
     return ERR_OK;
 }
 
-err_t client_get_game(client_session_t *session)
+err_t client_log_in(client_session_t *session, const char *name)
 {
+    if (!session || !name) return ERR_GENERIC;
     packet_t packet;
-    packet_receive(session->sock, &packet);
-
-    if (packet.type == PACKET_STATUS)
+    packet.type = PACKET_INIT;
+    memcpy(packet.init.name, name, PLAYER_NAME_MAX);
+    memcpy(session->name, name, PLAYER_NAME_MAX);
+    if (packet_send(session->sock, &packet))
     {
-        LOGE("From server: %s", err_msg(packet.status.err));
+        LOGE("Error sending init");
         return ERR_GENERIC;
     }
+    return client_get_response(session);
+}
+
+err_t client_send_move(client_session_t *session, pos_t pos)
+{
+    if (!session) return ERR_GENERIC;
+    packet_t packet;
+    packet.type = PACKET_MOVE;
+    memcpy(packet.move.name, session->name, PLAYER_NAME_MAX);
+    packet.move.pos = pos;
+    if (packet_send(session->sock, &packet))
+    {
+        LOGE("Error sending move");
+        return ERR_GENERIC;
+    }
+    return client_get_response(session);
+}
+
+err_t client_get_game(client_session_t *session, game_t *game, player_t *player)
+{
+    if (!session || !game || !player) return ERR_GENERIC;
+
+    packet_t packet;
+    packet_receive(session->sock, &packet);
 
     if (packet.type != PACKET_GAME)
     {
@@ -69,27 +95,33 @@ err_t client_get_game(client_session_t *session)
 
     LOGI("Got game from server");
 
-    session->game = packet.game.game;
+    *game = packet.game.game;
+    *player = packet.game.player;
 
     return ERR_OK;
 }
 
-err_t client_send_init(client_session_t *session, const char *name)
+void client_disconnect(client_session_t *session)
 {
-    return ERR_GENERIC;
-}
-
-err_t client_send_move(client_session_t *session, pos_t pos)
-{
-    return ERR_GENERIC;
-}
-
-err_t client_disconnect(client_session_t *session)
-{
-    return ERR_GENERIC;
+    if (!session) return;
+    if (session->sock != -1)
+        close(session->sock);
 }
 
 err_t client_get_response(client_session_t *session)
 {
-    return ERR_GENERIC;
+    if (!session) return ERR_GENERIC;
+
+    packet_t packet;
+    packet_receive(session->sock, &packet);
+
+    if (packet.type != PACKET_STATUS)
+    {
+        LOGE("Invalid response from server");
+        return ERR_GENERIC;
+    }
+
+    LOGI("Got status from server: %s", err_msg(packet.status.err));
+
+    return packet.status.err;
 }

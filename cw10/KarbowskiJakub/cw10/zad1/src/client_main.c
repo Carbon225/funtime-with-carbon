@@ -46,39 +46,51 @@ int main(int argc, char **argv)
         return -1;
     }
 
-    if (client_send_init(&session, client_name))
+    LOGI("Connected");
+
+    err_t res = client_log_in(&session, client_name);
+    if (res)
     {
-        LOGE("Failed sending init");
+        LOGE("Error logging in: %s", err_msg(res));
         client_disconnect(&session);
         return -1;
     }
 
-    err_t ret = client_get_response(&session);
-    if (ret)
-    {
-        LOGE("Error from server: %s", err_msg(ret));
-        client_disconnect(&session);
-        return -1;
-    }
+    LOGI("Logged in");
 
     for (;;)
     {
-        client_get_game(&session);
-        game_print(&session.game);
-
-        printf("Enter your move (1-9):\n");
-        int c;
-        do
+        game_t game;
+        player_t player;
+        if (client_get_game(&session, &game, &player))
         {
-            c = fgetc(stdin);
-        } while (c == '\n');
-        while (fgetc(stdin) != '\n');
-        pos_t pos = (pos_t) (c - '1');
+            LOGE("Error getting game");
+            break;
+        }
 
-        client_send_move(&session, pos);
+        game_print(&game);
+        printf("You are %c\n", player == PLAYER_X ? 'X' : 'O');
 
-        client_get_game(&session);
-        game_print(&session.game);
+        if (game.next_player == player)
+        {
+            printf("Enter your move (1-9):\n");
+            int c;
+            do
+            {
+                c = fgetc(stdin);
+            } while (c != '1' && c != '2' && c != '3' &&
+                     c != '4' && c != '5' && c != '6' &&
+                     c != '7' && c != '8' && c != '9');
+            while (fgetc(stdin) != '\n');
+            pos_t pos = (pos_t) (c - '1');
+
+            res = client_send_move(&session, pos);
+            if (res)
+            {
+                LOGE("Move error: %s", err_msg(res));
+                break;
+            }
+        }
     }
 
     return 0;

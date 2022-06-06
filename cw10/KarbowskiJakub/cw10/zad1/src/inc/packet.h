@@ -28,6 +28,7 @@ typedef struct move_packet_t
 
 typedef struct game_packet_t
 {
+    player_t player;
     game_t game;
 } game_packet_t;
 

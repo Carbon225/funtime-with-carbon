@@ -41,12 +41,12 @@ void packet_create(void *buf, const packet_t *packet)
             b[10] = packet->game.game.board[8];
 
             b[11] = packet->game.game.next_player;
-
             b[12] = packet->game.game.winner;
-
             b[13] = packet->game.game.is_over;
 
-            b[0] = 14;
+            b[14] = packet->game.player;
+
+            b[0] = 15;
             break;
 
         case PACKET_STATUS:
@@ -89,10 +89,10 @@ void packet_parse(const void *buf, packet_t *packet)
             packet->game.game.board[8] = b[10];
 
             packet->game.game.next_player = b[11];
-
             packet->game.game.winner = b[12];
-
             packet->game.game.is_over = b[13];
+
+            packet->game.player = b[14];
             break;
 
         case PACKET_STATUS:
