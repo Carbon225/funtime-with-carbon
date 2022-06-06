@@ -101,24 +101,24 @@ void packet_parse(const void *buf, packet_t *packet)
     }
 }
 
-int packet_send(int fd, const packet_t *packet)
+err_t packet_send(int fd, const packet_t *packet)
 {
-    if (!packet) return -1;
+    if (!packet) return ERR_GENERIC;
     uint8_t buf[PACKET_MAX_SIZE];
     packet_create(buf, packet);
-    return write(fd, buf, buf[0]) == buf[0] ? 0 : -1;
+    return write(fd, buf, buf[0]) == buf[0] ? ERR_OK : ERR_GENERIC;
 }
 
-int packet_receive(int fd, packet_t *packet)
+err_t packet_receive(int fd, packet_t *packet)
 {
-    if (!packet) return -1;
+    if (!packet) return ERR_GENERIC;
 
     uint8_t buf[PACKET_MAX_SIZE];
 
     if (read(fd, buf, 1) != 1)
     {
         LOGE("Socket read error");
-        return -1;
+        return ERR_GENERIC;
     }
 
     int count = 1;
@@ -130,7 +130,7 @@ int packet_receive(int fd, packet_t *packet)
         if (n <= 0)
         {
             LOGE("Socket read error");
-            return -1;
+            return ERR_GENERIC;
         }
         count += n;
         LOGI("Got %d/%d bytes", count, buf[0]);
@@ -139,5 +139,5 @@ int packet_receive(int fd, packet_t *packet)
     LOGI("Got full packet");
     packet_parse(buf, packet);
 
-    return 0;
+    return ERR_OK;
 }

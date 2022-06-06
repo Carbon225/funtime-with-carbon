@@ -137,13 +137,13 @@ void game_init(game_t *game)
     game->next_player = PLAYER_X;
 }
 
-int game_move(game_t *game, pos_t pos)
+err_t game_move(game_t *game, pos_t pos)
 {
-    if (!game) return -1;
+    if (!game) return ERR_GENERIC;
 
-    if (game->is_over) return -1;
+    if (game->is_over) return ERR_GENERIC;
 
-    if (game->board[pos] != FIELD_EMPTY) return -1;
+    if (game->board[pos] != FIELD_EMPTY) return ERR_GENERIC;
 
     game->board[pos] = (field_t) game->next_player;
 
@@ -151,7 +151,7 @@ int game_move(game_t *game, pos_t pos)
 
     update_game_winner(game);
 
-    return 0;
+    return ERR_OK;
 }
 
 void board_print(const board_t board)

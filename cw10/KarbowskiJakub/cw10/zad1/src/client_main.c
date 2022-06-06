@@ -53,7 +53,7 @@ int main(int argc, char **argv)
         return -1;
     }
 
-    int ret = client_get_response(&session);
+    err_t ret = client_get_response(&session);
     if (ret)
     {
         LOGE("Error from server: %s", err_msg(ret));

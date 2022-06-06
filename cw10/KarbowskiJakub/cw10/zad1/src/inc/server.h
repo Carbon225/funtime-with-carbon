@@ -30,22 +30,22 @@ typedef struct server_t
     gman_t game_manager;
 } server_t;
 
-int server_open(server_t *server, short port);
+err_t server_open(server_t *server, short port);
 
 void server_close(server_t *server);
 
-int server_loop(server_t *server);
+err_t server_loop(server_t *server);
 
-int server_open_net_sock(server_t *server, short port);
+err_t server_open_net_sock(server_t *server, short port);
 
-int server_handle_packet(server_t *server, int con, const packet_t *packet);
+err_t server_handle_packet(server_t *server, int con, const packet_t *packet);
 
-int server_add_connection(server_t *server, int sock);
+err_t server_add_connection(server_t *server, int sock);
 
-int server_handle_init(server_t *server, int con, const init_packet_t *packet);
+err_t server_handle_init(server_t *server, int con, const init_packet_t *packet);
 
-int server_handle_move(server_t *server, int con, const move_packet_t *packet);
+err_t server_handle_move(server_t *server, int con, const move_packet_t *packet);
 
-int server_handle_game(server_t *server, int con, const game_packet_t *packet);
+err_t server_handle_game(server_t *server, int con, const game_packet_t *packet);
 
 #endif

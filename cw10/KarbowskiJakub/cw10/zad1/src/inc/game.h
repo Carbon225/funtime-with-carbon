@@ -3,6 +3,8 @@
 
 #include <stdbool.h>
 
+#include "err.h"
+
 typedef enum player_t
 {
     PLAYER_X = 1,
@@ -48,7 +50,7 @@ typedef struct game_t
 
 void game_init(game_t *game);
 
-int game_move(game_t *game, pos_t pos);
+err_t game_move(game_t *game, pos_t pos);
 
 void board_print(const board_t board);
 

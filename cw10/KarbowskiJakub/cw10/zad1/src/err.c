@@ -1,6 +1,6 @@
 #include "err.h"
 
-const char *err_msg(err_t err)
+const char* err_msg(err_t err)
 {
     switch (err)
     {

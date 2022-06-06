@@ -13,11 +13,11 @@
 #include "packet.h"
 #include "err.h"
 
-int client_connect(client_session_t *session,
-                   connection_type_t connection_type,
-                   const char *address)
+err_t client_connect(client_session_t *session,
+                     connection_type_t connection_type,
+                     const char *address)
 {
-    if (!session || !address) return -1;
+    if (!session || !address) return ERR_GENERIC;
 
     session->sock = -1;
 
@@ -25,7 +25,7 @@ int client_connect(client_session_t *session,
     if (sockfd < 0)
     {
         perror("Could not create socket");
-        return -1;
+        return ERR_GENERIC;
     }
 
     struct sockaddr_in addr;
@@ -40,17 +40,17 @@ int client_connect(client_session_t *session,
     {
         perror("Could not connect to server");
         close(sockfd);
-        return -1;
+        return ERR_GENERIC;
     }
 
     LOGI("Connected\n");
 
     session->sock = sockfd;
 
-    return 0;
+    return ERR_OK;
 }
 
-int client_get_game(client_session_t *session)
+err_t client_get_game(client_session_t *session)
 {
     packet_t packet;
     packet_receive(session->sock, &packet);
@@ -58,38 +58,38 @@ int client_get_game(client_session_t *session)
     if (packet.type == PACKET_STATUS)
     {
         LOGE("From server: %s", err_msg(packet.status.err));
-        return -1;
+        return ERR_GENERIC;
     }
 
     if (packet.type != PACKET_GAME)
     {
         LOGE("Invalid response from server");
-        return -1;
+        return ERR_GENERIC;
     }
 
     LOGI("Got game from server");
 
     session->game = packet.game.game;
 
-    return 0;
+    return ERR_OK;
 }
 
-int client_send_init(client_session_t *session, const char *name)
+err_t client_send_init(client_session_t *session, const char *name)
 {
-    return 0;
+    return ERR_GENERIC;
 }
 
-int client_send_move(client_session_t *session, pos_t pos)
+err_t client_send_move(client_session_t *session, pos_t pos)
 {
-    return -1;
+    return ERR_GENERIC;
 }
 
-int client_disconnect(client_session_t *session)
+err_t client_disconnect(client_session_t *session)
 {
-    return 0;
+    return ERR_GENERIC;
 }
 
-int client_get_response(client_session_t *session)
+err_t client_get_response(client_session_t *session)
 {
-    return 0;
+    return ERR_GENERIC;
 }

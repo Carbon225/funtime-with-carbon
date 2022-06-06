@@ -2,6 +2,7 @@
 #define JK_10_01_PACKET_H
 
 #include "game.h"
+#include "err.h"
 
 #define PACKET_MAX_SIZE (256)
 #define PLAYER_NAME_MAX (32)
@@ -32,7 +33,7 @@ typedef struct game_packet_t
 
 typedef struct status_packet_t
 {
-    int err;
+    err_t err;
 } status_packet_t;
 
 typedef struct packet_t
@@ -51,8 +52,8 @@ void packet_create(void *buf, const packet_t *packet);
 
 void packet_parse(const void *buf, packet_t *packet);
 
-int packet_send(int fd, const packet_t *packet);
+err_t packet_send(int fd, const packet_t *packet);
 
-int packet_receive(int fd, packet_t *packet);
+err_t packet_receive(int fd, packet_t *packet);
 
 #endif

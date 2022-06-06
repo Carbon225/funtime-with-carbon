@@ -11,9 +11,9 @@
 #include "log.h"
 #include "packet.h"
 
-int server_open(server_t *server, short port)
+err_t server_open(server_t *server, short port)
 {
-    if (!server) return -1;
+    if (!server) return ERR_GENERIC;
 
     server->netsock = -1;
 
@@ -29,10 +29,10 @@ int server_open(server_t *server, short port)
     if (server_open_net_sock(server, port))
     {
         LOGE("Could not open net sock");
-        return -1;
+        return ERR_GENERIC;
     }
 
-    return 0;
+    return ERR_OK;
 }
 
 void server_close(server_t *server)
@@ -51,11 +51,11 @@ void server_close(server_t *server)
     }
 }
 
-int server_loop(server_t *server)
+err_t server_loop(server_t *server)
 {
-    if (!server) return -1;
+    if (!server) return ERR_GENERIC;
 
-    if (server->netsock == -1) return -1;
+    if (server->netsock == -1) return ERR_GENERIC;
 
     struct pollfd fds[SERVER_MAX_CONNECTIONS + 1];
     fds[SERVER_MAX_CONNECTIONS].fd = server->netsock;
@@ -164,15 +164,15 @@ int server_loop(server_t *server)
     return 0;
 }
 
-int server_open_net_sock(server_t *server, short port)
+err_t server_open_net_sock(server_t *server, short port)
 {
-    if (!server) return -1;
+    if (!server) return ERR_GENERIC;
 
     int sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock == -1)
     {
         perror("Could not create socket");
-        return -1;
+        return ERR_GENERIC;
     }
 
     struct sockaddr_in addr;
@@ -185,48 +185,45 @@ int server_open_net_sock(server_t *server, short port)
     {
         perror("Could not bind socket");
         close(sock);
-        return -1;
+        return ERR_GENERIC;
     }
 
     if (listen(sock, 32))
     {
         perror("Could not bind socket");
         close(sock);
-        return -1;
+        return ERR_GENERIC;
     }
 
     printf("Socket opened on 0.0.0.0:%d\n", ntohs(addr.sin_port));
 
     server->netsock = sock;
 
-    return 0;
+    return ERR_OK;
 }
 
-int server_handle_packet(server_t *server, int con, const packet_t *packet)
+err_t server_handle_packet(server_t *server, int con, const packet_t *packet)
 {
     switch (packet->type)
     {
         case PACKET_INIT:
-            server_handle_init(server, con, &packet->init);
-            break;
+            return server_handle_init(server, con, &packet->init);
 
         case PACKET_MOVE:
-            server_handle_move(server, con, &packet->move);
-            break;
+            return server_handle_move(server, con, &packet->move);
 
         case PACKET_GAME:
-            server_handle_game(server, con, &packet->game);
-            break;
+            return server_handle_game(server, con, &packet->game);
 
         case PACKET_STATUS:
             LOGI("Got status %d: %s", packet->status.err, err_msg(packet->status.err));
             break;
     }
 
-    return 0;
+    return ERR_OK;
 }
 
-int server_add_connection(server_t *server, int sock)
+err_t server_add_connection(server_t *server, int sock)
 {
     for (int i = 0; i < SERVER_MAX_CONNECTIONS; ++i)
     {
@@ -235,18 +232,18 @@ int server_add_connection(server_t *server, int sock)
             server->connections[i].status = CONNECTION_STATUS_ACTIVE;
             server->connections[i].sock = sock;
             server->connections[i].recv_count = 0;
-            return 0;
+            return ERR_OK;
         }
     }
     LOGE("Out of connections");
-    return -1;
+    return ERR_GENERIC;
 }
 
-int server_handle_init(server_t *server, int con, const init_packet_t *packet)
+err_t server_handle_init(server_t *server, int con, const init_packet_t *packet)
 {
-    if (!server || !packet) return -1;
+    if (!server || !packet) return ERR_GENERIC;
 
-    int err = gman_add_player(&server->game_manager, packet->name);
+    err_t err = gman_add_player(&server->game_manager, packet->name);
 
     if (err)
     {
@@ -259,19 +256,19 @@ int server_handle_init(server_t *server, int con, const init_packet_t *packet)
         if (packet_send(server->connections[con].sock, &resp))
             LOGE("Failed sending response");
 
-        return -1;
+        return ERR_OK;
     }
 
     LOGI("Added new player");
 
-    return 0;
+    return ERR_OK;
 }
 
-int server_handle_move(server_t *server, int con, const move_packet_t *packet)
+err_t server_handle_move(server_t *server, int con, const move_packet_t *packet)
 {
-    if (!server || !packet) return -1;
+    if (!server || !packet) return ERR_GENERIC;
 
-    int err = gman_execute_move(&server->game_manager, packet->name, packet->pos);
+    err_t err = gman_execute_move(&server->game_manager, packet->name, packet->pos);
 
     if (err)
     {
@@ -284,16 +281,16 @@ int server_handle_move(server_t *server, int con, const move_packet_t *packet)
         if (packet_send(server->connections[con].sock, &resp))
             LOGE("Failed sending response");
 
-        return -1;
+        return ERR_OK;
     }
 
     LOGI("Executed move");
 
-    return 0;
+    return ERR_OK;
 }
 
 int server_handle_game(server_t *server, int con, const game_packet_t *packet)
 {
     LOGE("Server got game packet! (should never happen)");
-    return -1;
+    return ERR_GENERIC;
 }
