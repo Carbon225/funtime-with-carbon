@@ -9,7 +9,14 @@ const char* err_msg(err_t err)
 
         case ERR_GENERIC:
             return "Error";
-    }
 
-    return "Unknown error";
+        case ERR_NAME_OCCUPIED:
+            return "Name is already occupied";
+
+        case ERR_PLAYER_NOT_FOUND:
+            return "Player not found";
+
+        default:
+            return "Unknown error";
+    }
 }

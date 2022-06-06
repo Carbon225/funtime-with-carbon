@@ -10,6 +10,7 @@
 
 #include "log.h"
 #include "packet.h"
+#include "game_manager.h"
 
 err_t server_open(server_t *server, short port)
 {
@@ -17,7 +18,7 @@ err_t server_open(server_t *server, short port)
 
     server->netsock = -1;
 
-    gman_init(&server->game_manager);
+    gman_init(server);
 
     for (int i = 0; i < SERVER_MAX_CONNECTIONS; ++i)
     {
@@ -63,6 +64,12 @@ err_t server_loop(server_t *server)
 
     for (;;)
     {
+        if (gman_process(server))
+        {
+            LOGE("GMAN error");
+            break;
+        }
+
         for (int i = 0; i < SERVER_MAX_CONNECTIONS; ++i)
         {
             if (server->connections[i].status == CONNECTION_STATUS_ACTIVE)
@@ -163,7 +170,7 @@ err_t server_loop(server_t *server)
         }
     }
 
-    return 0;
+    return ERR_OK;
 }
 
 err_t server_open_net_sock(server_t *server, short port)
@@ -246,7 +253,7 @@ err_t server_handle_init(server_t *server, int con, const init_packet_t *packet)
 {
     if (!server || !packet) return ERR_GENERIC;
 
-    err_t err = gman_add_player(&server->game_manager, packet->name);
+    err_t err = gman_add_player(server, con, packet->name);
 
     if (err) LOGE("Failed to add player");
     else LOGI("Added new player");
@@ -264,7 +271,7 @@ err_t server_handle_move(server_t *server, int con, const move_packet_t *packet)
 {
     if (!server || !packet) return ERR_GENERIC;
 
-    err_t err = gman_execute_move(&server->game_manager, packet->name, packet->pos);
+    err_t err = gman_execute_move(server, packet->name, packet->pos);
 
     if (err) LOGE("Failed executing move");
     else LOGI("Executed move");
