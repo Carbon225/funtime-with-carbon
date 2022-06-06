@@ -4,6 +4,7 @@
 
 #include "client.h"
 #include "game.h"
+#include "log.h"
 
 static const char HELP[] =
         "SO Lab 10 - Jakub Karbowski\n"
@@ -38,7 +39,11 @@ int main(int argc, char **argv)
     const char *server_address = argv[3];
 
     client_session_t session;
-    client_connect(&session, client_name, connection_type, server_address);
+    if (client_connect(&session, client_name, connection_type, server_address))
+    {
+        LOGE("Could not connect to server");
+        return -1;
+    }
 
     for (;;)
     {
@@ -46,8 +51,12 @@ int main(int argc, char **argv)
         game_print(&session.game);
 
         printf("Enter your move (1-9):\n");
-        int c = fgetc(stdin);
-        while (fgetc(stdin) != -1);
+        int c;
+        do
+        {
+            c = fgetc(stdin);
+        } while (c == '\n');
+        while (fgetc(stdin) != '\n');
         pos_t pos = (pos_t) (c - '1');
 
         client_send_move(&session, pos);

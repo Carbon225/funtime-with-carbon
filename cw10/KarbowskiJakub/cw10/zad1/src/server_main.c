@@ -1,36 +1,24 @@
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <poll.h>
+
+#include "log.h"
+#include "server.h"
 
 int main(int argc, char **argv)
 {
-    int netsock = socket(AF_INET, SOCK_DGRAM, 0);
-    if (netsock < 0)
+    server_t server;
+
+    if (server_open(&server, 8080))
     {
-        perror("Could not create socket");
+        LOGE("Could not open server");
         return -1;
     }
 
-    struct sockaddr_in addr;
-    memset(&addr, 0, sizeof addr);
-    addr.sin_family = AF_INET;
-    addr.sin_port = htons(8080);
-    addr.sin_addr.s_addr = htonl(INADDR_ANY);
-
-    if (bind(netsock, (struct sockaddr*) &addr, sizeof addr) != 0)
+    if (server_loop(&server))
     {
-        perror("Could not bind socket");
-        close(netsock);
-        return -1;
+        LOGE("Server loop error");
     }
 
-    printf("Socket opened on 0.0.0.0:%d\n", ntohs(addr.sin_port));
-
-    close(netsock);
+    server_close(&server);
 
     return 0;
 }
