@@ -11,13 +11,13 @@
 
 #include "log.h"
 #include "packet.h"
+#include "err.h"
 
 int client_connect(client_session_t *session,
-                   const char *name,
                    connection_type_t connection_type,
                    const char *address)
 {
-    if (!session || !name || !address) return -1;
+    if (!session || !address) return -1;
 
     session->sock = -1;
 
@@ -57,7 +57,7 @@ int client_get_game(client_session_t *session)
 
     if (packet.type == PACKET_STATUS)
     {
-        LOGE("From server: %s", packet.status.msg);
+        LOGE("From server: %s", err_msg(packet.status.err));
         return -1;
     }
 
@@ -74,7 +74,22 @@ int client_get_game(client_session_t *session)
     return 0;
 }
 
+int client_send_init(client_session_t *session, const char *name)
+{
+    return 0;
+}
+
 int client_send_move(client_session_t *session, pos_t pos)
 {
     return -1;
+}
+
+int client_disconnect(client_session_t *session)
+{
+    return 0;
+}
+
+int client_get_response(client_session_t *session)
+{
+    return 0;
 }

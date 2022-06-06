@@ -51,8 +51,7 @@ void packet_create(void *buf, const packet_t *packet)
 
         case PACKET_STATUS:
             b[2] = packet->status.err;
-            memcpy((char*)(b + 3), packet->status.msg, STATUS_MESSAGE_MAX);
-            b[0] = 3 + STATUS_MESSAGE_MAX;
+            b[0] = 3;
             break;
     }
 }
@@ -98,7 +97,6 @@ void packet_parse(const void *buf, packet_t *packet)
 
         case PACKET_STATUS:
             packet->status.err = b[2];
-            memcpy(packet->status.msg, (char*)(b + 3), STATUS_MESSAGE_MAX);
             break;
     }
 }

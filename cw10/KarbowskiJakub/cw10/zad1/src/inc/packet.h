@@ -5,7 +5,6 @@
 
 #define PACKET_MAX_SIZE (256)
 #define PLAYER_NAME_MAX (32)
-#define STATUS_MESSAGE_MAX (64)
 
 typedef enum packet_type_t
 {
@@ -34,7 +33,6 @@ typedef struct game_packet_t
 typedef struct status_packet_t
 {
     int err;
-    char msg[STATUS_MESSAGE_MAX + 1];
 } status_packet_t;
 
 typedef struct packet_t

@@ -5,6 +5,7 @@
 #include "client.h"
 #include "game.h"
 #include "log.h"
+#include "err.h"
 
 static const char HELP[] =
         "SO Lab 10 - Jakub Karbowski\n"
@@ -39,9 +40,24 @@ int main(int argc, char **argv)
     const char *server_address = argv[3];
 
     client_session_t session;
-    if (client_connect(&session, client_name, connection_type, server_address))
+    if (client_connect(&session, connection_type, server_address))
     {
         LOGE("Could not connect to server");
+        return -1;
+    }
+
+    if (client_send_init(&session, client_name))
+    {
+        LOGE("Failed sending init");
+        client_disconnect(&session);
+        return -1;
+    }
+
+    int ret = client_get_response(&session);
+    if (ret)
+    {
+        LOGE("Error from server: %s", err_msg(ret));
+        client_disconnect(&session);
         return -1;
     }
 

@@ -219,7 +219,7 @@ int server_handle_packet(server_t *server, int con, const packet_t *packet)
             break;
 
         case PACKET_STATUS:
-            LOGI("Got status %d: %s", packet->status.err, packet->status.msg);
+            LOGI("Got status %d: %s", packet->status.err, err_msg(packet->status.err));
             break;
     }
 
@@ -255,7 +255,6 @@ int server_handle_init(server_t *server, int con, const init_packet_t *packet)
         packet_t resp;
         resp.type = PACKET_STATUS;
         resp.status.err = err;
-        strncpy(resp.status.msg, gman_err_msg(err), STATUS_MESSAGE_MAX);
 
         if (packet_send(server->connections[con].sock, &resp))
             LOGE("Failed sending response");
@@ -281,7 +280,6 @@ int server_handle_move(server_t *server, int con, const move_packet_t *packet)
         packet_t resp;
         resp.type = PACKET_STATUS;
         resp.status.err = err;
-        strncpy(resp.status.msg, gman_err_msg(err), STATUS_MESSAGE_MAX);
 
         if (packet_send(server->connections[con].sock, &resp))
             LOGE("Failed sending response");

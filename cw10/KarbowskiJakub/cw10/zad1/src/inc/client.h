@@ -19,9 +19,14 @@ typedef struct client_session_t
 } client_session_t;
 
 int client_connect(client_session_t *session,
-                   const char *name,
                    connection_type_t connection_type,
                    const char *address);
+
+int client_disconnect(client_session_t *session);
+
+int client_get_response(client_session_t *session);
+
+int client_send_init(client_session_t *session, const char *name);
 
 int client_get_game(client_session_t *session);
 
