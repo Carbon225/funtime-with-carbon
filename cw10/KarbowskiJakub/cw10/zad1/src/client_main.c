@@ -58,7 +58,7 @@ int main(int argc, char **argv)
 
     LOGI("Logged in");
 
-    for (;;)
+    while (session.connected)
     {
         game_t game;
         player_t player;
@@ -72,6 +72,8 @@ int main(int argc, char **argv)
         printf("Your opponent is [%s]\n", opponent);
         game_print(&game);
         printf("You are %c\n", player == PLAYER_X ? 'X' : 'O');
+
+        if (game.is_over) break;
 
         if (game.next_player == player)
         {
@@ -94,6 +96,8 @@ int main(int argc, char **argv)
             }
         }
     }
+
+    client_disconnect(&session);
 
     return 0;
 }

@@ -17,6 +17,7 @@ typedef struct client_session_t
 {
     int sock;
     char name[PLAYER_NAME_MAX];
+    bool connected;
 } client_session_t;
 
 err_t client_connect(client_session_t *session,

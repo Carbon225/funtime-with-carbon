@@ -20,6 +20,7 @@ err_t client_connect(client_session_t *session,
     if (!session || !address) return ERR_GENERIC;
 
     session->sock = -1;
+    session->connected = false;
 
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0)
@@ -42,6 +43,7 @@ err_t client_connect(client_session_t *session,
     }
 
     session->sock = sockfd;
+    session->connected = true;
 
     return ERR_OK;
 }
@@ -49,6 +51,9 @@ err_t client_connect(client_session_t *session,
 err_t client_log_in(client_session_t *session, const char *name)
 {
     if (!session || !name) return ERR_GENERIC;
+
+    if (!session->connected) return ERR_GENERIC;
+
     packet_t packet;
     packet.type = PACKET_INIT;
     memcpy(packet.init.name, name, PLAYER_NAME_MAX);
@@ -56,6 +61,7 @@ err_t client_log_in(client_session_t *session, const char *name)
     if (packet_send(session->sock, &packet))
     {
         LOGE("Error sending init");
+        session->connected = false;
         return ERR_GENERIC;
     }
     return client_get_response(session);
@@ -64,6 +70,9 @@ err_t client_log_in(client_session_t *session, const char *name)
 err_t client_send_move(client_session_t *session, pos_t pos)
 {
     if (!session) return ERR_GENERIC;
+
+    if (!session->connected) return ERR_GENERIC;
+
     packet_t packet;
     packet.type = PACKET_MOVE;
     memcpy(packet.move.name, session->name, PLAYER_NAME_MAX);
@@ -71,6 +80,7 @@ err_t client_send_move(client_session_t *session, pos_t pos)
     if (packet_send(session->sock, &packet))
     {
         LOGE("Error sending move");
+        session->connected = false;
         return ERR_GENERIC;
     }
     return client_get_response(session);
@@ -84,8 +94,15 @@ err_t client_get_game(client_session_t *session,
     if (!session || !game || !player || !opponent)
         return ERR_GENERIC;
 
+    if (!session->connected) return ERR_GENERIC;
+
     packet_t packet;
-    packet_receive(session->sock, &packet);
+    if (packet_receive(session->sock, &packet))
+    {
+        LOGE("Error receiving game");
+        session->connected = false;
+        return ERR_GENERIC;
+    }
 
     if (packet.type != PACKET_GAME)
     {
@@ -107,14 +124,22 @@ void client_disconnect(client_session_t *session)
     if (!session) return;
     if (session->sock != -1)
         close(session->sock);
+    session->connected = false;
 }
 
 err_t client_get_response(client_session_t *session)
 {
     if (!session) return ERR_GENERIC;
 
+    if (!session->connected) return ERR_GENERIC;
+
     packet_t packet;
-    packet_receive(session->sock, &packet);
+    if (packet_receive(session->sock, &packet))
+    {
+        LOGE("Error receiving response");
+        session->connected = false;
+        return ERR_GENERIC;
+    }
 
     if (packet.type != PACKET_STATUS)
     {
