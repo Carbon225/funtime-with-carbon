@@ -3,13 +3,16 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 #include "game.h"
 #include "packet.h"
 
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+
 #define GMAN_MAX_SESSIONS (256)
 #define GMAN_MAX_PLAYERS (256)
-#define SERVER_MAX_CONNECTIONS (256)
+#define SERVER_MAX_CONNECTIONS MIN(256, FOPEN_MAX - 1)
 
 typedef struct server_client_conn_t
 {

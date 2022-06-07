@@ -70,8 +70,8 @@ int main(int argc, char **argv)
         }
 
         printf("Your opponent is [%s]\n", opponent);
-        game_print(&game);
         printf("You are %c\n", player == PLAYER_X ? 'X' : 'O');
+        game_print(&game);
 
         if (game.is_over) break;
 
