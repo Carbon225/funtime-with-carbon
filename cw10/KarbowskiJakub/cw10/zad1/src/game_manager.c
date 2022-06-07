@@ -176,3 +176,66 @@ err_t gman_create_session(server_t *server, int p1, int p2)
     LOGE("Out of game sessions");
     return ERR_GENERIC;
 }
+
+void gman_cleanup_players(server_t *server)
+{
+    if (!server) return;
+
+    for (int i = 0; i < GMAN_MAX_PLAYERS; ++i)
+    {
+        gman_player_t *player = &server->game_manager.players[i];
+        if (!player->active) continue;
+        server_client_conn_t *conn = &server->connections[player->con];
+        if (!conn->active)
+        {
+            gman_remove_player(server, i);
+        }
+    }
+}
+
+void gman_cleanup_sessions(server_t *server)
+{
+    if (!server) return;
+
+    for (int i = 0; i < GMAN_MAX_SESSIONS; ++i)
+    {
+        gman_game_session_t *sess = &server->game_manager.sessions[i];
+        if (!sess->active) continue;
+        gman_player_t *p1 = &server->game_manager.players[sess->p1];
+        gman_player_t *p2 = &server->game_manager.players[sess->p2];
+        if (!p1->active || !p2->active)
+        {
+            gman_remove_session(server, i);
+        }
+    }
+}
+
+void gman_remove_player(server_t *server, int i)
+{
+    if (!server || i < 0 || i >= GMAN_MAX_PLAYERS) return;
+    if (!server->game_manager.players[i].active) return;
+
+    gman_player_t *player = &server->game_manager.players[i];
+    server_remove_client(server, player->con);
+    player->con = -1;
+    player->active = false;
+    player->session = -1;
+    LOGI("Removed player %s", player->name);
+}
+
+void gman_remove_session(server_t *server, int i)
+{
+    if (!server || i < 0 || i >= GMAN_MAX_SESSIONS) return;
+    if (!server->game_manager.sessions[i].active) return;
+
+    gman_game_session_t *sess = &server->game_manager.sessions[i];
+
+    gman_remove_player(server, sess->p1);
+    gman_remove_player(server, sess->p2);
+
+    sess->active = false;
+    sess->p1 = -1;
+    sess->p2 = -1;
+
+    LOGI("Removed session %d", i);
+}

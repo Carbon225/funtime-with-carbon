@@ -17,4 +17,12 @@ err_t gman_find_pairs(server_t *server);
 
 err_t gman_create_session(server_t *server, int p1, int p2);
 
+void gman_cleanup_players(server_t *server);
+
+void gman_cleanup_sessions(server_t *server);
+
+void gman_remove_player(server_t *server, int i);
+
+void gman_remove_session(server_t *server, int i);
+
 #endif

@@ -20,6 +20,7 @@ typedef struct server_client_conn_t
     int sock;
     uint8_t recv_buf[PACKET_MAX_SIZE];
     int recv_count;
+    bool error;
 } server_client_conn_t;
 
 typedef struct gman_player_t
@@ -67,6 +68,8 @@ err_t server_handle_init(server_t *server, int con, const init_packet_t *packet)
 
 err_t server_handle_move(server_t *server, int con, const move_packet_t *packet);
 
-void server_kill_client(server_t *server, int con);
+void server_cleanup_clients(server_t *server);
+
+void server_remove_client(server_t *server, int i);
 
 #endif

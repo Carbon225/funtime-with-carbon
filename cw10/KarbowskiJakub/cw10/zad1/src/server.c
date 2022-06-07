@@ -25,6 +25,7 @@ err_t server_open(server_t *server, short port)
         server->connections[i].active = false;
         server->connections[i].sock = -1;
         server->connections[i].recv_count = 0;
+        server->connections[i].error = false;
     }
 
     if (server_open_net_sock(server, port))
@@ -64,10 +65,14 @@ err_t server_loop(server_t *server)
 
     for (;;)
     {
+        server_cleanup_clients(server);
+        gman_cleanup_players(server);
+        gman_cleanup_sessions(server);
+
         if (gman_process(server))
         {
             LOGE("GMAN error");
-            break;
+            return ERR_GENERIC;
         }
 
         for (int i = 0; i < SERVER_MAX_CONNECTIONS; ++i)
@@ -123,7 +128,7 @@ err_t server_loop(server_t *server)
                         if (n != 1)
                         {
                             LOGE("Socket read error");
-                            server_kill_client(server, i);
+                            conn->error = true;
                         }
                         else
                         {
@@ -142,7 +147,7 @@ err_t server_loop(server_t *server)
                         if (n <= 0)
                         {
                             LOGE("Socket read error");
-                            server_kill_client(server, i);
+                            conn->error = true;
                         }
                         else
                         {
@@ -167,6 +172,11 @@ err_t server_loop(server_t *server)
                     }
                 }
             }
+        }
+        else
+        {
+            LOGE("poll error");
+            return ERR_GENERIC;
         }
     }
 
@@ -262,7 +272,10 @@ err_t server_handle_init(server_t *server, int con, const init_packet_t *packet)
     resp.type = PACKET_STATUS;
     resp.status.err = err;
     if (packet_send(server->connections[con].sock, &resp))
+    {
         LOGE("Failed sending response");
+        server->connections[con].error = true;
+    }
 
     return ERR_OK;
 }
@@ -279,12 +292,31 @@ err_t server_handle_move(server_t *server, int con, const move_packet_t *packet)
     return ERR_OK;
 }
 
-void server_kill_client(server_t *server, int con)
+void server_cleanup_clients(server_t *server)
 {
     if (!server) return;
-    if (server->connections[con].sock != -1)
+
+    for (int i = 0; i < SERVER_MAX_CONNECTIONS; ++i)
     {
-        close(server->connections[con].sock);
-        LOGI("Killed client %i", con);
+        server_client_conn_t *conn = &server->connections[i];
+        if (!conn->active) continue;
+        if (conn->error)
+        {
+            server_remove_client(server, i);
+        }
     }
+}
+
+void server_remove_client(server_t *server, int i)
+{
+    if (!server || i < 0 || i >= SERVER_MAX_CONNECTIONS) return;
+    if (!server->connections[i].active) return;
+
+    server_client_conn_t *conn = &server->connections[i];
+    close(conn->sock);
+    conn->recv_count = 0;
+    conn->sock = -1;
+    conn->error = false;
+    conn->active = false;
+    LOGI("Removed client %d", i);
 }
