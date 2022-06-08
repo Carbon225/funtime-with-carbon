@@ -55,6 +55,10 @@ void packet_create(void *buf, const packet_t *packet)
             b[2] = packet->status.err;
             b[0] = 3;
             break;
+
+        case PACKET_PING:
+            b[0] = 2;
+            break;
     }
 }
 
@@ -101,6 +105,9 @@ void packet_parse(const void *buf, packet_t *packet)
 
         case PACKET_STATUS:
             packet->status.err = (err_t) (int8_t) b[2];
+            break;
+
+        case PACKET_PING:
             break;
     }
 }

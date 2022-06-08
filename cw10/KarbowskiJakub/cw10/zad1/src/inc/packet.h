@@ -13,6 +13,7 @@ typedef enum packet_type_t
     PACKET_MOVE,
     PACKET_GAME,
     PACKET_STATUS,
+    PACKET_PING,
 } packet_type_t;
 
 typedef struct init_packet_t

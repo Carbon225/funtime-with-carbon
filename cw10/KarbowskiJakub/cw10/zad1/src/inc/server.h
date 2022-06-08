@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <pthread.h>
 
 #include "game.h"
 #include "packet.h"
@@ -21,6 +22,8 @@ typedef struct server_client_conn_t
     uint8_t recv_buf[PACKET_MAX_SIZE];
     int recv_count;
     bool error;
+    bool alive;
+    pthread_mutex_t mtx;
 } server_client_conn_t;
 
 typedef struct gman_player_t
@@ -52,6 +55,7 @@ typedef struct server_t
     char unsockpath[100];
     server_client_conn_t connections[SERVER_MAX_CONNECTIONS];
     gman_t game_manager;
+    pthread_t pinger;
 } server_t;
 
 err_t server_open(server_t *server, short port, const char *sock_path);

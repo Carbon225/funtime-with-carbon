@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <poll.h>
+#include <unistd.h>
 
 #include "client.h"
 #include "game.h"
@@ -81,10 +83,26 @@ int main(int argc, char **argv)
             for (;;)
             {
                 printf("Enter your move (1-9):\n");
-                int c;
+                int c = 0;
                 do
                 {
-                    c = fgetc(stdin);
+                    struct pollfd fds[2];
+                    fds[0].fd = STDIN_FILENO;
+                    fds[0].events = POLLIN;
+                    fds[1].fd = session.sock;
+                    fds[1].events = POLLIN;
+                    if (poll(fds, 2, -1) > 0)
+                    {
+                        if (fds[0].revents & POLLIN)
+                            c = fgetc(stdin);
+                        else if (fds[1].revents & POLLIN)
+                        {
+                            packet_t ping;
+                            packet_receive(session.sock, &ping);
+                            if (ping.type == PACKET_PING)
+                                packet_send(session.sock, &ping);
+                        }
+                    }
                 } while (c != '1' && c != '2' && c != '3' &&
                          c != '4' && c != '5' && c != '6' &&
                          c != '7' && c != '8' && c != '9');

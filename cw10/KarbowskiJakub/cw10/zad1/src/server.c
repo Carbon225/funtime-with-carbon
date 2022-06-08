@@ -9,6 +9,7 @@
 #include <sys/un.h>
 #include <poll.h>
 #include <signal.h>
+#include <pthread.h>
 
 #include "log.h"
 #include "packet.h"
@@ -20,6 +21,47 @@ static void sig_handler(int sig)
 {
     if (sig != SIGINT) return;
     g_got_sigint = true;
+}
+
+static void* pinger_task(void *arg)
+{
+    server_t *server = (server_t*) arg;
+
+    while (!g_got_sigint)
+    {
+        sleep(5);
+
+        for (int i = 0; i < SERVER_MAX_CONNECTIONS; ++i)
+        {
+            server_client_conn_t *conn = &server->connections[i];
+
+            pthread_mutex_lock(&conn->mtx);
+
+            if (conn->active)
+            {
+                if (!conn->alive)
+                {
+                    LOGE("Client %d did not respond", i);
+                    conn->error = true;
+                }
+                else
+                {
+                    packet_t packet;
+                    packet.type = PACKET_PING;
+                    if (packet_send(conn->sock, &packet))
+                    {
+                        LOGE("Could not send ping to %d", i);
+                        conn->error = true;
+                    }
+                    conn->alive = false;
+                }
+            }
+
+            pthread_mutex_unlock(&conn->mtx);
+        }
+    }
+
+    return NULL;
 }
 
 err_t server_open(server_t *server, short port, const char *sock_path)
@@ -43,6 +85,8 @@ err_t server_open(server_t *server, short port, const char *sock_path)
         server->connections[i].sock = -1;
         server->connections[i].recv_count = 0;
         server->connections[i].error = false;
+        server->connections[i].alive = false;
+        pthread_mutex_init(&server->connections[i].mtx, NULL);
     }
 
     if (server_open_net_sock(server, port))
@@ -61,6 +105,8 @@ err_t server_open(server_t *server, short port, const char *sock_path)
     act.sa_handler = sig_handler;
     sigaction(SIGINT, &act, NULL);
 
+    pthread_create(&server->pinger, NULL, pinger_task, (void*) server);
+
     return ERR_OK;
 }
 
@@ -76,6 +122,9 @@ void server_close(server_t *server)
         close(server->netsock);
         unlink(server->unsockpath);
     }
+
+    pthread_kill(server->pinger, SIGINT);
+    pthread_join(server->pinger, NULL);
 
     for (int i = 0; i < SERVER_MAX_CONNECTIONS; ++i)
     {
@@ -162,6 +211,8 @@ err_t server_loop(server_t *server)
 
                 if (fds[i].revents & POLLIN)
                 {
+                    pthread_mutex_lock(&conn->mtx);
+
                     LOGI("Data on connection %d", i);
 
                     if (conn->recv_count == 0)
@@ -217,6 +268,8 @@ err_t server_loop(server_t *server)
                             }
                         }
                     }
+
+                    pthread_mutex_unlock(&conn->mtx);
                 }
             }
         }
@@ -317,6 +370,11 @@ err_t server_handle_packet(server_t *server, int con, const packet_t *packet)
         case PACKET_STATUS:
             LOGI("Got status %d: %s", packet->status.err, err_msg(packet->status.err));
             break;
+
+        case PACKET_PING:
+            LOGI("Ping from %d", con);
+            server->connections[con].alive = true;
+            break;
     }
 
     return ERR_OK;
@@ -331,6 +389,8 @@ err_t server_add_connection(server_t *server, int sock)
             server->connections[i].active = true;
             server->connections[i].sock = sock;
             server->connections[i].recv_count = 0;
+            server->connections[i].alive = true;
+            server->connections[i].error = false;
             return ERR_OK;
         }
     }
@@ -378,24 +438,31 @@ void server_cleanup_clients(server_t *server)
     for (int i = 0; i < SERVER_MAX_CONNECTIONS; ++i)
     {
         server_client_conn_t *conn = &server->connections[i];
-        if (!conn->active) continue;
-        if (conn->error)
-        {
-            server_remove_client(server, i);
-        }
+        pthread_mutex_lock(&conn->mtx);
+        bool remove = conn->active && conn->error;
+        pthread_mutex_unlock(&conn->mtx);
+        if (remove) server_remove_client(server, i);
     }
 }
 
 void server_remove_client(server_t *server, int i)
 {
     if (!server || i < 0 || i >= SERVER_MAX_CONNECTIONS) return;
-    if (!server->connections[i].active) return;
 
     server_client_conn_t *conn = &server->connections[i];
-    close(conn->sock);
-    conn->recv_count = 0;
-    conn->sock = -1;
-    conn->error = false;
-    conn->active = false;
-    LOGI("Removed client %d", i);
+
+    pthread_mutex_lock(&conn->mtx);
+
+    if (conn->active)
+    {
+        close(conn->sock);
+        conn->recv_count = 0;
+        conn->sock = -1;
+        conn->error = false;
+        conn->active = false;
+        conn->alive = false;
+        LOGI("Removed client %d", i);
+    }
+
+    pthread_mutex_unlock(&conn->mtx);
 }

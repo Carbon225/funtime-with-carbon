@@ -153,17 +153,33 @@ err_t client_get_game(client_session_t *session,
     if (!session->connected) return ERR_GENERIC;
 
     packet_t packet;
-    if (packet_receive(session->sock, &packet))
-    {
-        LOGE("Error receiving game");
-        session->connected = false;
-        return ERR_GENERIC;
-    }
 
-    if (packet.type != PACKET_GAME)
+    for (;;)
     {
-        LOGE("Invalid response from server");
-        return ERR_GENERIC;
+        if (packet_receive(session->sock, &packet))
+        {
+            LOGE("Error receiving game");
+            session->connected = false;
+            return ERR_GENERIC;
+        }
+
+        if (packet.type == PACKET_PING)
+        {
+            if (packet_send(session->sock, &packet))
+            {
+                session->connected = false;
+                return ERR_GENERIC;
+            }
+            continue;
+        }
+
+        if (packet.type != PACKET_GAME)
+        {
+            LOGE("Invalid response from server");
+            return ERR_GENERIC;
+        }
+
+        break;
     }
 
     LOGI("Got game from server");
@@ -190,18 +206,34 @@ err_t client_get_response(client_session_t *session)
     if (!session->connected) return ERR_GENERIC;
 
     packet_t packet;
-    if (packet_receive(session->sock, &packet))
-    {
-        LOGE("Error receiving response");
-        session->connected = false;
-        return ERR_GENERIC;
-    }
 
-    if (packet.type != PACKET_STATUS)
+    for (;;)
     {
-        LOGE("Invalid response from server");
-        return ERR_GENERIC;
-    }
+        if (packet_receive(session->sock, &packet))
+        {
+            LOGE("Error receiving response");
+            session->connected = false;
+            return ERR_GENERIC;
+        }
+
+        if (packet.type == PACKET_PING)
+        {
+            if (packet_send(session->sock, &packet))
+            {
+                session->connected = false;
+                return ERR_GENERIC;
+            }
+            continue;
+        }
+
+        if (packet.type != PACKET_STATUS)
+        {
+            LOGE("Invalid response from server");
+            return ERR_GENERIC;
+        }
+
+        break;
+    };
 
     LOGI("Got status from server: %s", err_msg(packet.status.err));
 
