@@ -6,17 +6,25 @@
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <sys/un.h>
 #include <poll.h>
 
 #include "log.h"
 #include "packet.h"
 #include "game_manager.h"
 
-err_t server_open(server_t *server, short port)
+err_t server_open(server_t *server, short port, const char *sock_path)
 {
-    if (!server) return ERR_GENERIC;
+    if (!server || !sock_path) return ERR_GENERIC;
 
     server->netsock = -1;
+    server->unixsock = -1;
+
+    if (strlen(sock_path) >= sizeof(server->unsockpath))
+        return ERR_GENERIC;
+
+    server->unsockpath[sizeof(server->unsockpath) - 1] = 0;
+    strncpy(server->unsockpath, sock_path, sizeof(server->unsockpath) - 1);
 
     gman_init(server);
 
@@ -34,6 +42,12 @@ err_t server_open(server_t *server, short port)
         return ERR_GENERIC;
     }
 
+    if (server_open_unix_sock(server, sock_path))
+    {
+        LOGE("Could not open unix sock");
+        return ERR_GENERIC;
+    }
+
     return ERR_OK;
 }
 
@@ -43,6 +57,12 @@ void server_close(server_t *server)
 
     if (server->netsock != -1)
         close(server->netsock);
+
+    if (server->unixsock != -1)
+    {
+        close(server->netsock);
+        unlink(server->unsockpath);
+    }
 
     for (int i = 0; i < SERVER_MAX_CONNECTIONS; ++i)
     {
@@ -58,10 +78,13 @@ err_t server_loop(server_t *server)
     if (!server) return ERR_GENERIC;
 
     if (server->netsock == -1) return ERR_GENERIC;
+    if (server->unixsock == -1) return ERR_GENERIC;
 
-    struct pollfd fds[SERVER_MAX_CONNECTIONS + 1];
+    struct pollfd fds[SERVER_MAX_CONNECTIONS + 2];
     fds[SERVER_MAX_CONNECTIONS].fd = server->netsock;
     fds[SERVER_MAX_CONNECTIONS].events = POLLIN;
+    fds[SERVER_MAX_CONNECTIONS + 1].fd = server->unixsock;
+    fds[SERVER_MAX_CONNECTIONS + 1].events = POLLIN;
 
     for (;;)
     {
@@ -91,11 +114,22 @@ err_t server_loop(server_t *server)
 
         if (poll(fds, sizeof(fds) / sizeof(*fds), -1) > 0)
         {
-            if (fds[SERVER_MAX_CONNECTIONS].revents & POLLIN)
+            if (fds[SERVER_MAX_CONNECTIONS].revents & POLLIN ||
+                fds[SERVER_MAX_CONNECTIONS + 1].revents & POLLIN)
             {
-                LOGI("New connection");
+                int insock;
+                if (fds[SERVER_MAX_CONNECTIONS].revents & POLLIN)
+                {
+                    LOGI("New connection on net socket");
+                    insock = server->netsock;
+                }
+                else
+                {
+                    LOGI("New connection on unix socket");
+                    insock = server->unixsock;
+                }
 
-                int sock = accept(server->netsock, NULL, NULL);
+                int sock = accept(insock, NULL, NULL);
                 if (sock == -1)
                 {
                     perror("Could not accept connection");
@@ -207,16 +241,53 @@ err_t server_open_net_sock(server_t *server, short port)
         return ERR_GENERIC;
     }
 
-    if (listen(sock, 32))
+    if (listen(sock, 8))
     {
         perror("Could not bind socket");
         close(sock);
         return ERR_GENERIC;
     }
 
-    printf("Socket opened on 0.0.0.0:%d\n", ntohs(addr.sin_port));
+    LOGI("Socket opened on 0.0.0.0:%d", ntohs(addr.sin_port));
 
     server->netsock = sock;
+
+    return ERR_OK;
+}
+
+err_t server_open_unix_sock(server_t *server, const char *sock_path)
+{
+    if (!server || !sock_path) return ERR_GENERIC;
+
+    int sock = socket(AF_UNIX, SOCK_STREAM, 0);
+    if (sock == -1)
+    {
+        perror("Could not create socket");
+        return ERR_GENERIC;
+    }
+
+    struct sockaddr_un addr;
+    memset(&addr, 0, sizeof addr);
+    addr.sun_family = AF_UNIX;
+    strncpy(addr.sun_path, sock_path, sizeof(addr.sun_path) - 1);
+
+    if (bind(sock, (struct sockaddr*) &addr, sizeof addr))
+    {
+        perror("Could not bind socket");
+        close(sock);
+        return ERR_GENERIC;
+    }
+
+    if (listen(sock, 8))
+    {
+        perror("Could not bind socket");
+        close(sock);
+        return ERR_GENERIC;
+    }
+
+    LOGI("Socket opened on %s", sock_path);
+
+    server->unixsock = sock;
 
     return ERR_OK;
 }
