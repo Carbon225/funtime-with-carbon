@@ -8,10 +8,19 @@
 #include <netinet/in.h>
 #include <sys/un.h>
 #include <poll.h>
+#include <signal.h>
 
 #include "log.h"
 #include "packet.h"
 #include "game_manager.h"
+
+static volatile bool g_got_sigint = false;
+
+static void sig_handler(int sig)
+{
+    if (sig != SIGINT) return;
+    g_got_sigint = true;
+}
 
 err_t server_open(server_t *server, short port, const char *sock_path)
 {
@@ -47,6 +56,10 @@ err_t server_open(server_t *server, short port, const char *sock_path)
         LOGE("Could not open unix sock");
         return ERR_GENERIC;
     }
+
+    struct sigaction act = {0};
+    act.sa_handler = sig_handler;
+    sigaction(SIGINT, &act, NULL);
 
     return ERR_OK;
 }
@@ -86,7 +99,7 @@ err_t server_loop(server_t *server)
     fds[SERVER_MAX_CONNECTIONS + 1].fd = server->unixsock;
     fds[SERVER_MAX_CONNECTIONS + 1].events = POLLIN;
 
-    for (;;)
+    while (!g_got_sigint)
     {
         server_cleanup_clients(server);
         gman_cleanup_players(server);
@@ -206,11 +219,6 @@ err_t server_loop(server_t *server)
                     }
                 }
             }
-        }
-        else
-        {
-            LOGE("poll error");
-            return ERR_GENERIC;
         }
     }
 
