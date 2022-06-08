@@ -17,14 +17,14 @@ void packet_create(void *buf, const packet_t *packet)
     switch (packet->type)
     {
         case PACKET_INIT:
-            memcpy((char*)(b + 2), packet->init.name, PLAYER_NAME_MAX);
-            b[0] = 2 + PLAYER_NAME_MAX;
+            memcpy(b + 2, packet->init.name, sizeof(packet->init.name));
+            b[0] = 2 + sizeof(packet->init.name);
             break;
 
         case PACKET_MOVE:
             b[2] = packet->move.pos;
-            memcpy((char*)(b + 3), packet->move.name, PLAYER_NAME_MAX);
-            b[0] = 3 + PLAYER_NAME_MAX;
+            memcpy(b + 3, packet->move.name, sizeof(packet->move.name));
+            b[0] = 3 + sizeof(packet->move.name);
             break;
 
         case PACKET_GAME:
@@ -46,9 +46,9 @@ void packet_create(void *buf, const packet_t *packet)
 
             b[14] = packet->game.player;
 
-            memcpy((char*)(b + 15), packet->game.opponent, PLAYER_NAME_MAX);
+            memcpy(b + 15, packet->game.opponent, sizeof(packet->game.opponent));
 
-            b[0] = 15 + PLAYER_NAME_MAX;
+            b[0] = 15 + sizeof(packet->game.opponent);
             break;
 
         case PACKET_STATUS:
@@ -69,38 +69,38 @@ void packet_parse(const void *buf, packet_t *packet)
     switch (packet->type)
     {
         case PACKET_INIT:
-            memcpy(packet->init.name, (char*)(b + 2), PLAYER_NAME_MAX);
+            memcpy(packet->init.name, b + 2, sizeof(packet->init.name));
             break;
 
         case PACKET_MOVE:
-            packet->move.pos = b[2];
-            memcpy(packet->move.name, (char*)(b + 3), PLAYER_NAME_MAX);
+            packet->move.pos = (pos_t) (int8_t) b[2];
+            memcpy(packet->move.name, b + 3, sizeof(packet->move.name));
             break;
 
         case PACKET_GAME:
-            packet->game.game.board[0] = b[2];
-            packet->game.game.board[1] = b[3];
-            packet->game.game.board[2] = b[4];
+            packet->game.game.board[0] = (field_t) (int8_t) b[2];
+            packet->game.game.board[1] = (field_t) (int8_t) b[3];
+            packet->game.game.board[2] = (field_t) (int8_t) b[4];
 
-            packet->game.game.board[3] = b[5];
-            packet->game.game.board[4] = b[6];
-            packet->game.game.board[5] = b[7];
+            packet->game.game.board[3] = (field_t) (int8_t) b[5];
+            packet->game.game.board[4] = (field_t) (int8_t) b[6];
+            packet->game.game.board[5] = (field_t) (int8_t) b[7];
 
-            packet->game.game.board[6] = b[8];
-            packet->game.game.board[7] = b[9];
-            packet->game.game.board[8] = b[10];
+            packet->game.game.board[6] = (field_t) (int8_t) b[8];
+            packet->game.game.board[7] = (field_t) (int8_t) b[9];
+            packet->game.game.board[8] = (field_t) (int8_t) b[10];
 
-            packet->game.game.next_player = b[11];
-            packet->game.game.winner = b[12];
+            packet->game.game.next_player = (player_t) (int8_t) b[11];
+            packet->game.game.winner = (winner_t) (int8_t) b[12];
             packet->game.game.is_over = b[13];
 
-            packet->game.player = b[14];
+            packet->game.player = (player_t) (int8_t) b[14];
 
-            memcpy(packet->game.opponent, (char*)(b + 15), PLAYER_NAME_MAX);
+            memcpy(packet->game.opponent, b + 15, sizeof(packet->game.opponent));
             break;
 
         case PACKET_STATUS:
-            packet->status.err = b[2];
+            packet->status.err = (err_t) (int8_t) b[2];
             break;
     }
 }

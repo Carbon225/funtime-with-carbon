@@ -56,7 +56,7 @@ int main(int argc, char **argv)
         return -1;
     }
 
-    LOGI("Logged in");
+    LOGI("Logged in, waiting for opponent");
 
     while (session.connected)
     {
