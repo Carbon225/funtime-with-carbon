@@ -9,6 +9,7 @@
 #include <netinet/in.h>
 #include <sys/un.h>
 #include <poll.h>
+#include <arpa/inet.h>
 
 #include "log.h"
 #include "packet.h"
@@ -31,6 +32,33 @@ err_t client_connect(client_session_t *session,
 
     if (connection_type == CONNECTION_NET)
     {
+        int col_i = -1;
+        for (int i = 0; address[i]; ++i)
+        {
+            if (address[i] == ':')
+            {
+                col_i = i;
+                break;
+            }
+        }
+        if (col_i == -1 || col_i > 50)
+        {
+            LOGE("Invalid address");
+            return ERR_GENERIC;
+        }
+
+        char addr_part[100];
+        memcpy(addr_part, address, col_i);
+        addr_part[col_i] = 0;
+
+        char *endptr;
+        long port = strtol(&address[col_i + 1], &endptr, 10);
+        if (!address[col_i + 1] || *endptr || port < 1 || port > INT16_MAX)
+        {
+            LOGE("Invalid port");
+            return ERR_GENERIC;
+        }
+
         sockfd = socket(AF_INET, SOCK_STREAM, 0);
         if (sockfd < 0)
         {
@@ -40,8 +68,8 @@ err_t client_connect(client_session_t *session,
 
         memset(&addr_in, 0, sizeof addr_in);
         addr_in.sin_family = AF_INET;
-        addr_in.sin_port = htons(8080);
-        addr_in.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+        addr_in.sin_port = htons((short) port);
+        inet_aton(addr_part, &addr_in.sin_addr);
 
         addr = (struct sockaddr*) &addr_in;
         socklen = sizeof(addr_in);
