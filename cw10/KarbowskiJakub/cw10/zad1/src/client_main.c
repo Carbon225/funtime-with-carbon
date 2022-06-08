@@ -77,16 +77,26 @@ int main(int argc, char **argv)
 
         if (game.next_player == player)
         {
-            printf("Enter your move (1-9):\n");
-            int c;
-            do
+            pos_t pos;
+            for (;;)
             {
-                c = fgetc(stdin);
-            } while (c != '1' && c != '2' && c != '3' &&
-                     c != '4' && c != '5' && c != '6' &&
-                     c != '7' && c != '8' && c != '9');
-            while (fgetc(stdin) != '\n');
-            pos_t pos = (pos_t) (c - '1');
+                printf("Enter your move (1-9):\n");
+                int c;
+                do
+                {
+                    c = fgetc(stdin);
+                } while (c != '1' && c != '2' && c != '3' &&
+                         c != '4' && c != '5' && c != '6' &&
+                         c != '7' && c != '8' && c != '9');
+                while (fgetc(stdin) != '\n');
+                pos = (pos_t) (c - '1');
+
+                if (game_move(&game, pos))
+                {
+                    printf("Invalid move!\n");
+                }
+                else break;
+            }
 
             res = client_send_move(&session, pos);
             if (res)
