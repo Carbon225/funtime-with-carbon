@@ -7,6 +7,7 @@
 #include <sys/socket.h>
 #include <stdint.h>
 #include <netinet/in.h>
+#include <sys/un.h>
 #include <poll.h>
 
 #include "log.h"
@@ -22,20 +23,47 @@ err_t client_connect(client_session_t *session,
     session->sock = -1;
     session->connected = false;
 
-    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (sockfd < 0)
+    int sockfd;
+    const struct sockaddr *addr;
+    socklen_t socklen;
+    struct sockaddr_in addr_in;
+    struct sockaddr_un addr_un;
+
+    if (connection_type == CONNECTION_NET)
     {
-        LOGE("Could not create socket");
-        return ERR_GENERIC;
+        sockfd = socket(AF_INET, SOCK_STREAM, 0);
+        if (sockfd < 0)
+        {
+            LOGE("Could not create socket");
+            return ERR_GENERIC;
+        }
+
+        memset(&addr_in, 0, sizeof addr_in);
+        addr_in.sin_family = AF_INET;
+        addr_in.sin_port = htons(8080);
+        addr_in.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+
+        addr = (struct sockaddr*) &addr_in;
+        socklen = sizeof(addr_in);
+    }
+    else
+    {
+        sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
+        if (sockfd < 0)
+        {
+            LOGE("Could not create socket");
+            return ERR_GENERIC;
+        }
+
+        memset(&addr_un, 0, sizeof addr_un);
+        addr_un.sun_family = AF_UNIX;
+        strncpy(addr_un.sun_path, address, sizeof(addr_un.sun_path) - 1);
+
+        addr = (struct sockaddr*) &addr_un;
+        socklen = sizeof(addr_un);
     }
 
-    struct sockaddr_in addr;
-    memset(&addr, 0, sizeof addr);
-    addr.sin_family = AF_INET;
-    addr.sin_port = htons(8080);
-    addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-
-    if (connect(sockfd, (const struct sockaddr*) &addr, sizeof addr) != 0)
+    if (connect(sockfd, addr, socklen) != 0)
     {
         LOGE("Could not connect to server");
         close(sockfd);
