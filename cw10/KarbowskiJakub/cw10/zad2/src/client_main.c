@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <time.h>
+#include <signal.h>
 #include <poll.h>
 #include <unistd.h>
 
@@ -14,8 +16,22 @@ static const char HELP[] =
         "Usage:\n"
         "%s NAME net|unix ADDRESS\n";
 
+static volatile bool g_got_sigint = false;
+
+static void sig_handler(int sig)
+{
+    if (sig != SIGINT) return;
+    g_got_sigint = true;
+}
+
 int main(int argc, char **argv)
 {
+    srandom(time(NULL));
+
+    struct sigaction act = {0};
+    act.sa_handler = sig_handler;
+    sigaction(SIGINT, &act, NULL);
+
     if (argc != 4)
     {
         fprintf(stderr, HELP, argv[0]);
@@ -60,7 +76,7 @@ int main(int argc, char **argv)
 
     LOGI("Logged in, waiting for opponent");
 
-    while (session.connected)
+    while (session.connected && !g_got_sigint)
     {
         game_t game;
         player_t player;
@@ -79,8 +95,8 @@ int main(int argc, char **argv)
 
         if (game.next_player == player)
         {
-            pos_t pos;
-            for (;;)
+            pos_t pos = -1;
+            while (!g_got_sigint)
             {
                 printf("Enter your move (1-9):\n");
                 int c = 0;
@@ -105,8 +121,11 @@ int main(int argc, char **argv)
                     }
                 } while (c != '1' && c != '2' && c != '3' &&
                          c != '4' && c != '5' && c != '6' &&
-                         c != '7' && c != '8' && c != '9');
-                while (fgetc(stdin) != '\n');
+                         c != '7' && c != '8' && c != '9' && !g_got_sigint);
+                while (fgetc(stdin) != '\n' && !g_got_sigint);
+
+                if (g_got_sigint) break;
+
                 pos = (pos_t) (c - '1');
 
                 if (game_move(&game, pos))
@@ -115,6 +134,8 @@ int main(int argc, char **argv)
                 }
                 else break;
             }
+
+            if (g_got_sigint) break;
 
             res = client_send_move(&session, pos);
             if (res)

@@ -23,6 +23,7 @@ err_t client_connect(client_session_t *session,
 
     session->sock = -1;
     session->connected = false;
+    session->un_active = false;
 
     int sockfd;
     const struct sockaddr *addr;
@@ -81,6 +82,23 @@ err_t client_connect(client_session_t *session,
         {
             LOGE("Could not create socket");
             return ERR_GENERIC;
+        }
+
+        {
+            struct sockaddr_un addr;
+            memset(&addr, 0, sizeof addr);
+            addr.sun_family = AF_UNIX;
+            sprintf(session->un_path, "%ld", random());
+            strncpy(addr.sun_path, session->un_path, sizeof(addr.sun_path) - 1);
+
+            if (bind(sockfd, (struct sockaddr*) &addr, sizeof addr))
+            {
+                perror("Could not bind socket");
+                close(sockfd);
+                return ERR_GENERIC;
+            }
+
+            session->un_active = true;
         }
 
         memset(&addr_un, 0, sizeof addr_un);
@@ -197,6 +215,8 @@ void client_disconnect(client_session_t *session)
     if (session->sock != -1)
         close(session->sock);
     session->connected = false;
+    if (session->un_active)
+        unlink(session->un_path);
 }
 
 err_t client_get_response(client_session_t *session)

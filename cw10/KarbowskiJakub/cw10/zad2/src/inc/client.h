@@ -2,6 +2,7 @@
 #define JK_10_02_CLIENT_H
 
 #include <stdint.h>
+#include <stdio.h>
 
 #include "game.h"
 #include "packet.h"
@@ -16,6 +17,8 @@ typedef enum connection_type_t
 typedef struct client_session_t
 {
     int sock;
+    char un_path[L_tmpnam];
+    bool un_active;
     char name[PLAYER_NAME_MAX];
     bool connected;
 } client_session_t;
