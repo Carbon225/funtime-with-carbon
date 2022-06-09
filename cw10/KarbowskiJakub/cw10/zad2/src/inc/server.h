@@ -5,6 +5,9 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <pthread.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <sys/un.h>
 
 #include "game.h"
 #include "packet.h"
@@ -19,8 +22,13 @@ typedef struct server_client_conn_t
 {
     bool active;
     int sock;
-    uint8_t recv_buf[PACKET_MAX_SIZE];
-    int recv_count;
+    union
+    {
+        struct sockaddr_in in;
+        struct sockaddr_un un;
+    } _addr;
+    struct sockaddr *addr;
+    socklen_t addrlen;
     bool error;
     bool alive;
     pthread_mutex_t mtx;
@@ -70,7 +78,7 @@ err_t server_open_unix_sock(server_t *server, const char *sock_path);
 
 err_t server_handle_packet(server_t *server, int con, const packet_t *packet);
 
-err_t server_add_connection(server_t *server, int sock);
+err_t server_add_connection(server_t *server, int sock, const struct sockaddr *addr, socklen_t socklen);
 
 err_t server_handle_init(server_t *server, int con, const init_packet_t *packet);
 

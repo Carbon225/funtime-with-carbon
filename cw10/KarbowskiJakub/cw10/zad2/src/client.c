@@ -59,7 +59,7 @@ err_t client_connect(client_session_t *session,
             return ERR_GENERIC;
         }
 
-        sockfd = socket(AF_INET, SOCK_STREAM, 0);
+        sockfd = socket(AF_INET, SOCK_DGRAM, 0);
         if (sockfd < 0)
         {
             LOGE("Could not create socket");
@@ -76,7 +76,7 @@ err_t client_connect(client_session_t *session,
     }
     else
     {
-        sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
+        sockfd = socket(AF_UNIX, SOCK_DGRAM, 0);
         if (sockfd < 0)
         {
             LOGE("Could not create socket");
@@ -114,7 +114,7 @@ err_t client_log_in(client_session_t *session, const char *name)
     packet.type = PACKET_INIT;
     memcpy(packet.init.name, name, PLAYER_NAME_MAX);
     memcpy(session->name, name, PLAYER_NAME_MAX);
-    if (packet_send(session->sock, &packet))
+    if (packet_send(session->sock, NULL, 0, &packet))
     {
         LOGE("Error sending init");
         session->connected = false;
@@ -133,7 +133,7 @@ err_t client_send_move(client_session_t *session, pos_t pos)
     packet.type = PACKET_MOVE;
     memcpy(packet.move.name, session->name, PLAYER_NAME_MAX);
     packet.move.pos = pos;
-    if (packet_send(session->sock, &packet))
+    if (packet_send(session->sock, NULL, 0, &packet))
     {
         LOGE("Error sending move");
         session->connected = false;
@@ -156,7 +156,7 @@ err_t client_get_game(client_session_t *session,
 
     for (;;)
     {
-        if (packet_receive(session->sock, &packet))
+        if (packet_receive(session->sock, NULL, NULL, &packet))
         {
             LOGE("Error receiving game");
             session->connected = false;
@@ -165,7 +165,7 @@ err_t client_get_game(client_session_t *session,
 
         if (packet.type == PACKET_PING)
         {
-            if (packet_send(session->sock, &packet))
+            if (packet_send(session->sock, NULL, 0, &packet))
             {
                 session->connected = false;
                 return ERR_GENERIC;
@@ -209,7 +209,7 @@ err_t client_get_response(client_session_t *session)
 
     for (;;)
     {
-        if (packet_receive(session->sock, &packet))
+        if (packet_receive(session->sock, NULL, NULL, &packet))
         {
             LOGE("Error receiving response");
             session->connected = false;
@@ -218,7 +218,7 @@ err_t client_get_response(client_session_t *session)
 
         if (packet.type == PACKET_PING)
         {
-            if (packet_send(session->sock, &packet))
+            if (packet_send(session->sock, NULL, 0, &packet))
             {
                 session->connected = false;
                 return ERR_GENERIC;

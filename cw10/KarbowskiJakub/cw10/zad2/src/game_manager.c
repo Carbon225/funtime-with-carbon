@@ -79,7 +79,11 @@ err_t gman_execute_move(server_t *server, const char *name, pos_t move)
         resp.type = PACKET_STATUS;
         resp.status.err = ret;
 
-        if (packet_send(server->connections[server->game_manager.players[i].con].sock, &resp))
+        if (packet_send(
+                server->connections[server->game_manager.players[i].con].sock,
+                server->connections[server->game_manager.players[i].con].addr,
+                server->connections[server->game_manager.players[i].con].addrlen,
+                &resp))
             LOGE("Failed sending response");
 
         if (!ret)
@@ -90,11 +94,21 @@ err_t gman_execute_move(server_t *server, const char *name, pos_t move)
 
             packet.game.player = PLAYER_X;
             memcpy(packet.game.opponent, server->game_manager.players[server->game_manager.sessions[session].p2].name, PLAYER_NAME_MAX);
-            packet_send(server->connections[server->game_manager.players[server->game_manager.sessions[session].p1].con].sock, &packet);
+            packet_send(
+                server->connections[server->game_manager.players[server->game_manager.sessions[session].p1].con].sock,
+                server->connections[server->game_manager.players[server->game_manager.sessions[session].p1].con].addr,
+                server->connections[server->game_manager.players[server->game_manager.sessions[session].p1].con].addrlen,
+                &packet
+            );
 
             packet.game.player = PLAYER_O;
             memcpy(packet.game.opponent, server->game_manager.players[server->game_manager.sessions[session].p1].name, PLAYER_NAME_MAX);
-            packet_send(server->connections[server->game_manager.players[server->game_manager.sessions[session].p2].con].sock, &packet);
+            packet_send(
+                server->connections[server->game_manager.players[server->game_manager.sessions[session].p2].con].sock,
+                server->connections[server->game_manager.players[server->game_manager.sessions[session].p2].con].addr,
+                server->connections[server->game_manager.players[server->game_manager.sessions[session].p2].con].addrlen,
+                &packet
+            );
         }
 
         return ERR_OK;
@@ -164,11 +178,21 @@ err_t gman_create_session(server_t *server, int p1, int p2)
 
             packet.game.player = PLAYER_X;
             memcpy(packet.game.opponent, server->game_manager.players[p2].name, PLAYER_NAME_MAX);
-            packet_send(server->connections[server->game_manager.players[p1].con].sock, &packet);
+            packet_send(
+                server->connections[server->game_manager.players[p1].con].sock,
+                server->connections[server->game_manager.players[p1].con].addr,
+                server->connections[server->game_manager.players[p1].con].addrlen,
+                &packet
+            );
 
             packet.game.player = PLAYER_O;
             memcpy(packet.game.opponent, server->game_manager.players[p1].name, PLAYER_NAME_MAX);
-            packet_send(server->connections[server->game_manager.players[p2].con].sock, &packet);
+            packet_send(
+                server->connections[server->game_manager.players[p2].con].sock,
+                server->connections[server->game_manager.players[p2].con].addr,
+                server->connections[server->game_manager.players[p2].con].addrlen,
+                &packet
+            );
 
             return ERR_OK;
         }

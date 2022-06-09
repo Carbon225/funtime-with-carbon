@@ -98,9 +98,9 @@ int main(int argc, char **argv)
                         else if (fds[1].revents & POLLIN)
                         {
                             packet_t ping;
-                            packet_receive(session.sock, &ping);
+                            packet_receive(session.sock, NULL, NULL, &ping);
                             if (ping.type == PACKET_PING)
-                                packet_send(session.sock, &ping);
+                                packet_send(session.sock, NULL, 0, &ping);
                         }
                     }
                 } while (c != '1' && c != '2' && c != '3' &&

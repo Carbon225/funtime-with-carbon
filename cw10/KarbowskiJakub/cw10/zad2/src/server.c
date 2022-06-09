@@ -48,7 +48,7 @@ static void* pinger_task(void *arg)
                 {
                     packet_t packet;
                     packet.type = PACKET_PING;
-                    if (packet_send(conn->sock, &packet))
+                    if (packet_send(conn->sock, conn->addr, conn->addrlen, &packet))
                     {
                         LOGE("Could not send ping to %d", i);
                         conn->error = true;
@@ -83,7 +83,8 @@ err_t server_open(server_t *server, short port, const char *sock_path)
     {
         server->connections[i].active = false;
         server->connections[i].sock = -1;
-        server->connections[i].recv_count = 0;
+        server->connections[i].addr = (struct sockaddr*) &server->connections[i]._addr;
+        server->connections[i].addrlen = -1;
         server->connections[i].error = false;
         server->connections[i].alive = false;
         pthread_mutex_init(&server->connections[i].mtx, NULL);
@@ -125,14 +126,6 @@ void server_close(server_t *server)
 
     pthread_kill(server->pinger, SIGINT);
     pthread_join(server->pinger, NULL);
-
-    for (int i = 0; i < SERVER_MAX_CONNECTIONS; ++i)
-    {
-        if (server->connections[i].active)
-        {
-            close(server->connections[i].sock);
-        }
-    }
 }
 
 err_t server_loop(server_t *server)
@@ -142,11 +135,11 @@ err_t server_loop(server_t *server)
     if (server->netsock == -1) return ERR_GENERIC;
     if (server->unixsock == -1) return ERR_GENERIC;
 
-    struct pollfd fds[SERVER_MAX_CONNECTIONS + 2];
-    fds[SERVER_MAX_CONNECTIONS].fd = server->netsock;
-    fds[SERVER_MAX_CONNECTIONS].events = POLLIN;
-    fds[SERVER_MAX_CONNECTIONS + 1].fd = server->unixsock;
-    fds[SERVER_MAX_CONNECTIONS + 1].events = POLLIN;
+    struct pollfd fds[2];
+    fds[0].fd = server->netsock;
+    fds[0].events = POLLIN;
+    fds[1].fd = server->unixsock;
+    fds[1].events = POLLIN;
 
     while (!g_got_sigint)
     {
@@ -160,112 +153,51 @@ err_t server_loop(server_t *server)
             return ERR_GENERIC;
         }
 
-        for (int i = 0; i < SERVER_MAX_CONNECTIONS; ++i)
+        if (poll(fds, sizeof(fds) / sizeof(*fds), 100) > 0)
         {
-            if (server->connections[i].active)
-            {
-                fds[i].fd = server->connections[i].sock;
-                fds[i].events = POLLIN;
-            }
-            else
-            {
-                fds[i].fd = -1;
-                fds[i].events = 0;
-            }
-        }
-
-        if (poll(fds, sizeof(fds) / sizeof(*fds), -1) > 0)
-        {
-            if (fds[SERVER_MAX_CONNECTIONS].revents & POLLIN ||
-                fds[SERVER_MAX_CONNECTIONS + 1].revents & POLLIN)
+            if (fds[0].revents & POLLIN ||
+                fds[1].revents & POLLIN)
             {
                 int insock;
-                if (fds[SERVER_MAX_CONNECTIONS].revents & POLLIN)
+                if (fds[0].revents & POLLIN)
                 {
-                    LOGI("New connection on net socket");
+                    LOGI("Data on net socket");
                     insock = server->netsock;
                 }
                 else
                 {
-                    LOGI("New connection on unix socket");
+                    LOGI("Data on unix socket");
                     insock = server->unixsock;
                 }
 
-                int sock = accept(insock, NULL, NULL);
-                if (sock == -1)
+                uint8_t buf[PACKET_MAX_SIZE];
+                union
                 {
-                    perror("Could not accept connection");
-                }
-                else
-                {
-                    if (!server_add_connection(server, sock))
-                        LOGI("Accepted connection");
-                    else
-                        LOGE("Could not accept connection");
-                }
-            }
+                    struct sockaddr_in in;
+                    struct sockaddr_in un;
+                } addr;
+                socklen_t addrlen = sizeof(addr);
 
-            for (int i = 0; i < SERVER_MAX_CONNECTIONS; ++i)
-            {
-                server_client_conn_t *conn = &server->connections[i];
+                recvfrom(insock, buf, sizeof(buf), 0, (struct sockaddr*) &addr, &addrlen);
 
-                if (fds[i].revents & POLLIN)
+                server_add_connection(server, insock, (struct sockaddr*) &addr, addrlen);
+
+                for (int i = 0; i < SERVER_MAX_CONNECTIONS; ++i)
                 {
+                    server_client_conn_t *conn = &server->connections[i];
+
                     pthread_mutex_lock(&conn->mtx);
 
-                    LOGI("Data on connection %d", i);
-
-                    if (conn->recv_count == 0)
+                    if (conn->active && conn->addrlen == addrlen && !memcmp(conn->addr, &addr, addrlen))
                     {
-                        int n = (int) read(
-                            conn->sock,
-                            conn->recv_buf,
-                            1
-                        );
+                        LOGI("Data on connection %d", i);
 
-                        if (n != 1)
+                        packet_t packet;
+                        packet_parse(buf, &packet);
+
+                        if (server_handle_packet(server, i, &packet))
                         {
-                            LOGE("Socket read error");
-                            conn->error = true;
-                        }
-                        else
-                        {
-                            conn->recv_count = 1;
-                            LOGI("Got packet length %d", conn->recv_buf[0]);
-                        }
-                    }
-                    else
-                    {
-                        int n = (int) read(
-                            conn->sock,
-                            conn->recv_buf + conn->recv_count,
-                            conn->recv_buf[0] - conn->recv_count
-                        );
-
-                        if (n <= 0)
-                        {
-                            LOGE("Socket read error");
-                            conn->error = true;
-                        }
-                        else
-                        {
-                            conn->recv_count += n;
-                            LOGI("Got %d/%d bytes", conn->recv_count, conn->recv_buf[0]);
-
-                            if (conn->recv_count == conn->recv_buf[0])
-                            {
-                                LOGI("Got full packet");
-
-                                packet_t packet;
-                                packet_parse(conn->recv_buf, &packet);
-
-                                if (server_handle_packet(server, i, &packet))
-                                {
-                                    LOGE("Packet handling error");
-                                }
-
-                                conn->recv_count = 0;
-                            }
+                            LOGE("Packet handling error");
                         }
                     }
 
@@ -282,7 +214,7 @@ err_t server_open_net_sock(server_t *server, short port)
 {
     if (!server) return ERR_GENERIC;
 
-    int sock = socket(AF_INET, SOCK_STREAM, 0);
+    int sock = socket(AF_INET, SOCK_DGRAM, 0);
     if (sock == -1)
     {
         perror("Could not create socket");
@@ -302,13 +234,6 @@ err_t server_open_net_sock(server_t *server, short port)
         return ERR_GENERIC;
     }
 
-    if (listen(sock, 8))
-    {
-        perror("Could not bind socket");
-        close(sock);
-        return ERR_GENERIC;
-    }
-
     LOGI("Socket opened on 0.0.0.0:%d", ntohs(addr.sin_port));
 
     server->netsock = sock;
@@ -320,7 +245,7 @@ err_t server_open_unix_sock(server_t *server, const char *sock_path)
 {
     if (!server || !sock_path) return ERR_GENERIC;
 
-    int sock = socket(AF_UNIX, SOCK_STREAM, 0);
+    int sock = socket(AF_UNIX, SOCK_DGRAM, 0);
     if (sock == -1)
     {
         perror("Could not create socket");
@@ -333,13 +258,6 @@ err_t server_open_unix_sock(server_t *server, const char *sock_path)
     strncpy(addr.sun_path, sock_path, sizeof(addr.sun_path) - 1);
 
     if (bind(sock, (struct sockaddr*) &addr, sizeof addr))
-    {
-        perror("Could not bind socket");
-        close(sock);
-        return ERR_GENERIC;
-    }
-
-    if (listen(sock, 8))
     {
         perror("Could not bind socket");
         close(sock);
@@ -380,20 +298,29 @@ err_t server_handle_packet(server_t *server, int con, const packet_t *packet)
     return ERR_OK;
 }
 
-err_t server_add_connection(server_t *server, int sock)
+err_t server_add_connection(server_t *server, int sock, const struct sockaddr *addr, socklen_t addrlen)
 {
+    for (int i = 0; i < SERVER_MAX_CONNECTIONS; ++i)
+    {
+        server_client_conn_t *conn = &server->connections[i];
+        if (conn->active && conn->addrlen == addrlen && !memcmp(conn->addr, addr, addrlen))
+            return ERR_OK;
+    }
+
     for (int i = 0; i < SERVER_MAX_CONNECTIONS; ++i)
     {
         if (!server->connections[i].active)
         {
             server->connections[i].active = true;
             server->connections[i].sock = sock;
-            server->connections[i].recv_count = 0;
+            memcpy(server->connections[i].addr, addr, addrlen);
+            server->connections[i].addrlen = addrlen;
             server->connections[i].alive = true;
             server->connections[i].error = false;
             return ERR_OK;
         }
     }
+
     LOGE("Out of connections");
     return ERR_GENERIC;
 }
@@ -410,7 +337,7 @@ err_t server_handle_init(server_t *server, int con, const init_packet_t *packet)
     packet_t resp;
     resp.type = PACKET_STATUS;
     resp.status.err = err;
-    if (packet_send(server->connections[con].sock, &resp))
+    if (packet_send(server->connections[con].sock, server->connections[con].addr, server->connections[con].addrlen, &resp))
     {
         LOGE("Failed sending response");
         server->connections[con].error = true;
@@ -455,8 +382,7 @@ void server_remove_client(server_t *server, int i)
 
     if (conn->active)
     {
-        close(conn->sock);
-        conn->recv_count = 0;
+        conn->addrlen = -1;
         conn->sock = -1;
         conn->error = false;
         conn->active = false;

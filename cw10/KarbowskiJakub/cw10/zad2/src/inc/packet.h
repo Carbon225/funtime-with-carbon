@@ -1,6 +1,10 @@
 #ifndef JK_10_02_PACKET_H
 #define JK_10_02_PACKET_H
 
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <sys/un.h>
+
 #include "game.h"
 #include "err.h"
 
@@ -55,8 +59,8 @@ void packet_create(void *buf, const packet_t *packet);
 
 void packet_parse(const void *buf, packet_t *packet);
 
-err_t packet_send(int fd, const packet_t *packet);
+err_t packet_send(int sock, const struct sockaddr *addr, socklen_t socklen, const packet_t *packet);
 
-err_t packet_receive(int fd, packet_t *packet);
+err_t packet_receive(int sock, struct sockaddr *addr, socklen_t *socklen, packet_t *packet);
 
 #endif
